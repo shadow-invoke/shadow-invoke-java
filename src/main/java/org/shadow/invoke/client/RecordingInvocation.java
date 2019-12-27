@@ -118,4 +118,13 @@ public class RecordingInvocation implements MethodInterceptor {
             builder.append('}');
         }
     }
+
+    protected boolean shouldSkip(Field fld, Object obj) {
+        if(obj == null || fld == null) return true;
+        Class<?> cls = obj.getClass();
+        if(!cls.equals(fld.getDeclaringClass())) return true;
+        Set<String> redactions = this.redactedFields.get(cls);
+        if(redactions == null || redactions.isEmpty()) return false;
+        return redactions.contains(fld.getName());
+    }
 }
