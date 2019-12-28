@@ -1,20 +1,23 @@
 package org.shadow.invoke.core;
 
-import java.util.HashMap;
-import java.util.Map;
-import java.util.UUID;
+import lombok.Data;
+import java.lang.reflect.Method;
+import java.util.*;
 
+@Data
 public class Recordings {
-    public static final Map<String, InvocationRecord> SAVED = new HashMap<>();
+    private final Map<String, InvocationRecord> savedRecordings = new HashMap<>();
+    private final ThreadLocal<String> threadLocalRecordingGuid = new ThreadLocal<>();
+    public static final Recordings INSTANCE = new Recordings();
 
     private Recordings() {}
 
-    public static InvocationRecord createAndSave() {
-        InvocationRecord recording = new InvocationRecord();
+    public InvocationRecord createAndSave(Object[] inputs, Object output, Method method,
+                                          List<FieldFilter> redacted, List<FieldFilter> ignored) {
+        InvocationRecord recording = new InvocationRecord(redacted, ignored, Arrays.asList(inputs), output, method);
         String guid = UUID.randomUUID().toString();
-        recording.setGuid(guid);
-        SAVED.put(guid, recording);
+        this.threadLocalRecordingGuid.set(guid);
+        this.savedRecordings.put(guid, recording);
         return recording;
     }
-
 }

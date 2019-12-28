@@ -5,13 +5,9 @@ import lombok.extern.slf4j.Slf4j;
 import net.sf.cglib.proxy.Enhancer;
 import net.sf.cglib.proxy.MethodInterceptor;
 import net.sf.cglib.proxy.MethodProxy;
-import org.apache.commons.lang3.ClassUtils;
-import org.shadow.invoke.core.DefaultValues;
 import org.shadow.invoke.core.FieldFilter;
 import org.shadow.invoke.core.InvocationRecord;
 import org.shadow.invoke.core.Recordings;
-
-import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.util.*;
 
@@ -19,13 +15,13 @@ import java.util.*;
 @Slf4j
 public class RecordingInvocation implements MethodInterceptor {
     private final Object originalInstance;
-    private final Map<Class<?>, Set<String>> redactedFields;
+    private final List<FieldFilter> redactedFields;
 
     protected RecordingInvocation() {
-        this(null, new HashMap<>());
+        this(null, new ArrayList<>());
     }
 
-    protected RecordingInvocation(Object instance, Map<Class<?>, Set<String>> redactedFields) {
+    protected RecordingInvocation(Object instance, List<FieldFilter> redactedFields) {
         this.originalInstance = instance;
         this.redactedFields = redactedFields;
     }
@@ -34,7 +30,7 @@ public class RecordingInvocation implements MethodInterceptor {
         if(recordedInstance == null) {
             throw new IllegalArgumentException("Can't create a recording invocation from a null instance.");
         }
-        return new RecordingInvocation(recordedInstance, new HashMap<>());
+        return new RecordingInvocation(recordedInstance, new ArrayList<>());
     }
 
     public RecordingInvocation redacting(FieldFilter... filters) {
@@ -52,10 +48,7 @@ public class RecordingInvocation implements MethodInterceptor {
 
     public RecordingInvocation redact(FieldFilter filter) {
         if(filter != null && filter.isValid()) {
-            if(!this.redactedFields.containsKey(filter.getFilteredClass())) {
-                this.redactedFields.put(filter.getFilteredClass(), new HashSet<>());
-            }
-            this.redactedFields.get(filter.getFilteredClass()).addAll(filter.getFilteredFields());
+            this.redactedFields.add(filter);
         } else {
             String message = "Bad redacting field filter passed to shadow invocation for {}: {}";
             String className = this.originalInstance.getClass().getSimpleName();
@@ -78,11 +71,7 @@ public class RecordingInvocation implements MethodInterceptor {
     public Object intercept(Object o, Method method, Object[] args, MethodProxy proxy) throws Throwable {
         Object result = method.invoke(this.originalInstance, args);
         try {
-            // TODO: Add field skipping and ThreadLocal current GUID.
-            InvocationRecord record = Recordings.createAndSave();
-            record.getInputs().addAll(Arrays.asList(args));
-            record.setResult(result);
-            record.setMethod(method);
+            InvocationRecord record = startNewRecording(o, method, args);
         } catch(Throwable t) {
             String message = "While intercepting recorded invocation. Method={}, Args={}, Object={}.";
             String passed = Arrays.toString(args);
@@ -91,12 +80,7 @@ public class RecordingInvocation implements MethodInterceptor {
         return result;
     }
 
-    protected boolean shouldSkip(Field fld, Object obj) {
-        if(obj == null || fld == null) return true;
-        Class<?> cls = obj.getClass();
-        if(!cls.equals(fld.getDeclaringClass())) return true;
-        Set<String> redactions = this.redactedFields.get(cls);
-        if(redactions == null || redactions.isEmpty()) return false;
-        return redactions.contains(fld.getName());
+    protected InvocationRecord startNewRecording(Object output, Method method, Object[] inputs) {
+        return Recordings.INSTANCE.createAndSave(inputs, output, method, this.redactedFields, new ArrayList<>());
     }
 }

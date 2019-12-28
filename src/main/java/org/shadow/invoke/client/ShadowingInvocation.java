@@ -2,22 +2,19 @@ package org.shadow.invoke.client;
 
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
-import net.sf.cglib.proxy.MethodProxy;
 import org.shadow.invoke.core.FieldFilter;
+import org.shadow.invoke.core.InvocationRecord;
+import org.shadow.invoke.core.Recordings;
 
-import java.lang.reflect.Field;
 import java.lang.reflect.Method;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 @Data
 @Slf4j
 public class ShadowingInvocation extends RecordingInvocation {
-    private final Map<Class<?>, Set<String>> ignoredFields;
+    private final List<FieldFilter> ignoredFields;
 
-    protected ShadowingInvocation(Object instance, Map<Class<?>, Set<String>> redactedFields, Map<Class<?>, Set<String>> ignoredFields) {
+    protected ShadowingInvocation(Object instance, List<FieldFilter> redactedFields, List<FieldFilter> ignoredFields) {
         super(instance, redactedFields);
         this.ignoredFields = ignoredFields;
     }
@@ -26,7 +23,7 @@ public class ShadowingInvocation extends RecordingInvocation {
         if(shadowedInstance == null) {
             throw new IllegalArgumentException("Can't create a shadowing invocation from a null instance.");
         }
-        return new ShadowingInvocation(shadowedInstance, new HashMap<>(), new HashMap<>());
+        return new ShadowingInvocation(shadowedInstance, new ArrayList<>(), new ArrayList<>());
     }
 
     public ShadowingInvocation ignoring(FieldFilter... filters) {
@@ -44,10 +41,7 @@ public class ShadowingInvocation extends RecordingInvocation {
 
     public ShadowingInvocation ignore(FieldFilter filter) {
         if(filter != null && filter.isValid()) {
-            if(!this.ignoredFields.containsKey(filter.getFilteredClass())) {
-                this.ignoredFields.put(filter.getFilteredClass(), new HashSet<>());
-            }
-            this.ignoredFields.get(filter.getFilteredClass()).addAll(filter.getFilteredFields());
+            this.ignoredFields.add(filter);
         } else {
             String message = "Bad ignoring field filter passed to shadow invocation for {}: {}";
             String className = this.getOriginalInstance().getClass().getSimpleName();
@@ -57,10 +51,7 @@ public class ShadowingInvocation extends RecordingInvocation {
     }
 
     @Override
-    protected boolean shouldSkip(Field fld, Object obj) {
-        if(super.shouldSkip(fld, obj)) return true;
-        Set<String> ignores = this.ignoredFields.get(obj.getClass());
-        if(ignores == null || ignores.isEmpty()) return false;
-        return ignores.contains(fld.getName());
+    protected InvocationRecord startNewRecording(Object output, Method method, Object[] inputs) {
+        return Recordings.INSTANCE.createAndSave(inputs, output, method, this.getRedactedFields(), this.ignoredFields);
     }
 }
