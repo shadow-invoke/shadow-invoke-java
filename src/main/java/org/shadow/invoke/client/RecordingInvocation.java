@@ -8,11 +8,12 @@ import net.sf.cglib.proxy.MethodProxy;
 import org.apache.commons.lang3.ClassUtils;
 import org.shadow.invoke.core.DefaultValues;
 import org.shadow.invoke.core.FieldFilter;
+import org.shadow.invoke.core.InvocationRecord;
+import org.shadow.invoke.core.Recordings;
+
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 @Data
 @Slf4j
@@ -51,7 +52,10 @@ public class RecordingInvocation implements MethodInterceptor {
 
     public RecordingInvocation redact(FieldFilter filter) {
         if(filter != null && filter.isValid()) {
-            this.redactedFields.put(filter.getFilteredClass(), filter.getFilteredFields());
+            if(!this.redactedFields.containsKey(filter.getFilteredClass())) {
+                this.redactedFields.put(filter.getFilteredClass(), new HashSet<>());
+            }
+            this.redactedFields.get(filter.getFilteredClass()).addAll(filter.getFilteredFields());
         } else {
             String message = "Bad redacting field filter passed to shadow invocation for {}: {}";
             String className = this.originalInstance.getClass().getSimpleName();
@@ -72,51 +76,19 @@ public class RecordingInvocation implements MethodInterceptor {
 
     @Override
     public Object intercept(Object o, Method method, Object[] args, MethodProxy proxy) throws Throwable {
-        String className = this.originalInstance.getClass().getSimpleName();
-        log.info("called " + method.getName() + " in " + className + " with the following arguments:");
-        Object result = null;
+        Object result = method.invoke(this.originalInstance, args);
         try {
-            for (Object obj : args) {
-                StringBuilder builder = new StringBuilder();
-                this.formJson(builder, obj, 0);
-                log.info(builder.toString());
-            }
-            result = method.invoke(this.originalInstance, args);
-            log.info("...and returning:");
-            StringBuilder builder = new StringBuilder();
-            this.formJson(builder, result, 0);
-            log.info(builder.toString());
+            // TODO: Add field skipping and ThreadLocal current GUID.
+            InvocationRecord record = Recordings.createAndSave();
+            record.getInputs().addAll(Arrays.asList(args));
+            record.setResult(result);
+            record.setMethod(method);
         } catch(Throwable t) {
-            log.error("While intercepting", t);
+            String message = "While intercepting recorded invocation. Method={}, Args={}, Object={}.";
+            String passed = Arrays.toString(args);
+            log.error(String.format(message, method.getName(), passed, this.originalInstance), t);
         }
         return result;
-    }
-
-    protected void formJson(StringBuilder builder, Object obj, int level) throws IllegalAccessException {
-        if(obj != null && level < 5) {
-            builder.append('{');
-            Class<?> cls = obj.getClass();
-            for(Field fld : cls.getDeclaredFields()) {
-                if(fld.getDeclaringClass().equals(cls)) {
-                    fld.setAccessible(true);
-                    builder.append("\"");
-                    builder.append(fld.getName());
-                    builder.append("\":");
-                    Set<String> redactions = this.redactedFields.get(cls);
-                    if(redactions != null && redactions.contains(fld.getName())) {
-                        log.info("Redacting " + fld.getName());
-                        DefaultValues.appendFromField(fld, builder);
-                    } else if(ClassUtils.isPrimitiveOrWrapper(fld.getType())) {
-                        builder.append(fld.get(obj));
-                    } else if(fld.getType().equals(String.class)) {
-                        builder.append("\"\"");
-                    } else {
-                        formJson(builder, fld.get(obj), level + 1);
-                    }
-                }
-            }
-            builder.append('}');
-        }
     }
 
     protected boolean shouldSkip(Field fld, Object obj) {

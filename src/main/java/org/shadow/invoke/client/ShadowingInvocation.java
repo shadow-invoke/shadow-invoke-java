@@ -4,8 +4,11 @@ import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 import net.sf.cglib.proxy.MethodProxy;
 import org.shadow.invoke.core.FieldFilter;
+
+import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
@@ -41,7 +44,10 @@ public class ShadowingInvocation extends RecordingInvocation {
 
     public ShadowingInvocation ignore(FieldFilter filter) {
         if(filter != null && filter.isValid()) {
-            this.ignoredFields.put(filter.getFilteredClass(), filter.getFilteredFields());
+            if(!this.ignoredFields.containsKey(filter.getFilteredClass())) {
+                this.ignoredFields.put(filter.getFilteredClass(), new HashSet<>());
+            }
+            this.ignoredFields.get(filter.getFilteredClass()).addAll(filter.getFilteredFields());
         } else {
             String message = "Bad ignoring field filter passed to shadow invocation for {}: {}";
             String className = this.getOriginalInstance().getClass().getSimpleName();
@@ -51,24 +57,10 @@ public class ShadowingInvocation extends RecordingInvocation {
     }
 
     @Override
-    public Object intercept(Object o, Method method, Object[] args, MethodProxy proxy) throws Throwable {
-        String className = this.getOriginalInstance().getClass().getSimpleName();
-        log.info("called " + method.getName() + " in " + className + " with the following arguments:");
-        Object result = null;
-        try {
-            for (Object obj : args) {
-                StringBuilder builder = new StringBuilder();
-                this.formJson(builder, obj, 0);
-                log.info(builder.toString());
-            }
-            result = method.invoke(this.getOriginalInstance(), args);
-            log.info("...and returning:");
-            StringBuilder builder = new StringBuilder();
-            this.formJson(builder, result, 0);
-            log.info(builder.toString());
-        } catch(Throwable t) {
-            log.error("While intercepting", t);
-        }
-        return result;
+    protected boolean shouldSkip(Field fld, Object obj) {
+        if(super.shouldSkip(fld, obj)) return true;
+        Set<String> ignores = this.ignoredFields.get(obj.getClass());
+        if(ignores == null || ignores.isEmpty()) return false;
+        return ignores.contains(fld.getName());
     }
 }
