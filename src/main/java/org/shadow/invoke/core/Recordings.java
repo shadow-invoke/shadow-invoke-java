@@ -20,4 +20,11 @@ public class Recordings {
         this.savedRecordings.put(guid, recording);
         return recording;
     }
+
+    public InvocationRecord getThreadLocalRecording() {
+        if(this.threadLocalRecordingGuid.get() != null) {
+            return this.savedRecordings.get(this.threadLocalRecordingGuid.get());
+        }
+        return null;
+    }
 }
