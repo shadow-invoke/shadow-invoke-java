@@ -5,8 +5,6 @@ import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.ToString;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.lang3.ClassUtils;
-
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.util.*;
@@ -57,20 +55,24 @@ public class InvocationRecord {
                 fld.setAccessible(true);
                 Set<String> redactions = this.redactedFields.get(cls);
                 if (redactions != null && redactions.contains(fld.getName())) {
-                    setMember(obj, RedactedFields.redactedValueOf(fld), fld);
-                } else if(!ClassUtils.isPrimitiveOrWrapper(fld.getType())) {
+                    setMember(obj, RedactedFields.redactedValueOf(fld.getType()), fld);
+                } else if(shouldRecursivelyRedact(fld)) {
                     redactFields(getMember(obj, fld), level + 1);
                 }
             }
         }
     }
 
+    private boolean shouldRecursivelyRedact(Field field) {
+        return this.redactedFields.containsKey(field.getType()) && RedactedFields.shouldRedactMembers(field);
+    }
+
     private void setMember(Object parent, Object member, Field field) {
         try {
             field.set(parent, member);
         } catch (IllegalAccessException e) {
-            String message = "While setting field {} of {}";
-            log.error(String.format(message, field, parent.getClass()), e);
+            String message = "While setting field %s of %s";
+            log.error(String.format(message, field.getName(), parent.getClass().getSimpleName()), e);
         }
     }
 
@@ -78,8 +80,8 @@ public class InvocationRecord {
         try {
             return field.get(parent);
         } catch (IllegalAccessException e) {
-            String message = "While getting field {} of {}";
-            log.error(String.format(message, field, parent.getClass()), e);
+            String message = "While getting field %s of %s";
+            log.error(String.format(message, field.getName(), parent.getClass().getSimpleName()), e);
         }
         return null;
     }

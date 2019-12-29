@@ -71,7 +71,7 @@ public class RecordingInvocation implements MethodInterceptor {
     public Object intercept(Object o, Method method, Object[] args, MethodProxy proxy) throws Throwable {
         Object result = method.invoke(this.originalInstance, args);
         try {
-            InvocationRecord record = startNewRecording(o, method, args);
+            InvocationRecord record = startNewRecording(result, method, args);
         } catch(Throwable t) {
             String message = "While intercepting recorded invocation. Method=%s, Args=%s, Object=%s.";
             String passed = Arrays.toString(args);
