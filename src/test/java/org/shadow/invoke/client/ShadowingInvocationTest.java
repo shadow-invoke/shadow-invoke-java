@@ -33,5 +33,6 @@ public class ShadowingInvocationTest {
                 .doSomethingShadowed(foo);
         InvocationRecord recording = Recordings.INSTANCE.getThreadLocalRecording();
         assertNotNull(recording);
+        assertTrue(Foo.class.isAssignableFrom(recording.getOutput().getClass()));
     }
 }

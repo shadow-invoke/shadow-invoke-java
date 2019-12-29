@@ -57,7 +57,7 @@ public class InvocationRecord {
                 fld.setAccessible(true);
                 Set<String> redactions = this.redactedFields.get(cls);
                 if (redactions != null && redactions.contains(fld.getName())) {
-                    setMember(obj, RedactedValue.of(fld), fld);
+                    setMember(obj, RedactedFields.redactedValueOf(fld), fld);
                 } else if(!ClassUtils.isPrimitiveOrWrapper(fld.getType())) {
                     redactFields(getMember(obj, fld), level + 1);
                 }
