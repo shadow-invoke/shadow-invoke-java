@@ -9,15 +9,13 @@ import org.shadow.invoke.Task;
 import org.shadow.invoke.core.InvocationRecord;
 import org.shadow.invoke.core.Recordings;
 import org.shadow.invoke.core.RedactedFields;
-
 import java.time.LocalDateTime;
 import java.util.concurrent.TimeUnit;
-
 import static org.junit.Assert.*;
-import static org.shadow.invoke.client.ShadowingInvocation.shadow;
+import static org.shadow.invoke.client.RecordingInvocation.record;
 import static org.shadow.invoke.core.FieldFilter.from;
 
-public class ShadowingInvocationTest {
+public class RecordingInvocationTest {
     private static final Bar bar = new Bar();
     private static final Baz baz = new Baz(
             "Pawn", 75000.00D, 69.5F, 1234L,
@@ -26,12 +24,8 @@ public class ShadowingInvocationTest {
     private static final Foo foo = new Foo("Bob", "Smith", 35, LocalDateTime.now(), baz);
 
     @Test
-    public void testShadow() {
-        shadow(bar)
-                .ignoring(
-                        from(Foo.class).fields("timestamp"),
-                        from(Baz.class).fields("id")
-                )
+    public void testRecord() {
+        record(bar)
                 .redacting(
                         from(Foo.class).fields("lastName"),
                         from(Baz.class).fields("salary")

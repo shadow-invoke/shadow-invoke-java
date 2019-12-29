@@ -14,6 +14,6 @@ public class Baz {
     private String title;
     private double salary;
     private Float height;
-    private int id;
+    private Long id;
     private Map<TimeUnit, Task> taskTime;
 }
