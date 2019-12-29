@@ -5,6 +5,8 @@ import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.ToString;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.ClassUtils;
+
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.util.*;
@@ -45,17 +47,20 @@ public class InvocationRecord {
     private void redactFields(Object obj, int level) {
         if(obj == null) return;
         if(level > MAX_LEVELS) {
-            String message = "Recursive redacting exceeded limit of {}. Current member class: {}.";
-            log.warn(String.format(message, MAX_LEVELS, obj.getClass()));
+            String message = "Recursive redacting exceeded limit of %d. Current member class: %s.";
+            log.warn(String.format(message, MAX_LEVELS, obj.getClass().getSimpleName()));
+            return;
         }
         Class<?> cls = obj.getClass();
         for(Field fld : cls.getDeclaredFields()) {
-            fld.setAccessible(true);
-            Set<String> redactions = this.redactedFields.get(cls);
-            if(redactions != null && redactions.contains(fld.getName())) {
-                setMember(obj, RedactedValue.of(fld), fld);
-            } else {
-                redactFields(getMember(obj, fld), level+1);
+            if(fld.getDeclaringClass().equals(cls)) {
+                fld.setAccessible(true);
+                Set<String> redactions = this.redactedFields.get(cls);
+                if (redactions != null && redactions.contains(fld.getName())) {
+                    setMember(obj, RedactedValue.of(fld), fld);
+                } else if(!ClassUtils.isPrimitiveOrWrapper(fld.getType())) {
+                    redactFields(getMember(obj, fld), level + 1);
+                }
             }
         }
     }

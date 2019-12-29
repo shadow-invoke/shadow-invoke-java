@@ -32,9 +32,9 @@ public class ShadowingInvocation extends RecordingInvocation {
                 this.ignore(f);
             }
         } else {
-            String message = "Bad ignore filters passed to shadow invocation for {}: {}";
+            String message = "Bad ignore filters passed to shadow invocation for %s: %s";
             String className = this.getOriginalInstance().getClass().getSimpleName();
-            log.warn(String.format(message, className, filters));
+            log.warn(String.format(message, className, Arrays.toString(filters)));
         }
         return this;
     }
@@ -43,7 +43,7 @@ public class ShadowingInvocation extends RecordingInvocation {
         if(filter != null && filter.isValid()) {
             this.ignoredFields.add(filter);
         } else {
-            String message = "Bad ignoring field filter passed to shadow invocation for {}: {}";
+            String message = "Bad ignoring field filter passed to shadow invocation for %s: %s";
             String className = this.getOriginalInstance().getClass().getSimpleName();
             log.warn(String.format(message, className, filter));
         }

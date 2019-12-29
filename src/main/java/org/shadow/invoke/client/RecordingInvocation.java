@@ -39,7 +39,7 @@ public class RecordingInvocation implements MethodInterceptor {
                 this.redact(f);
             }
         } else {
-            String message = "Bad redact filters passed to recording invocation for {}: {}";
+            String message = "Bad redact filters passed to recording invocation for %s: %s";
             String className = this.originalInstance.getClass().getSimpleName();
             log.warn(String.format(message, className, filters));
         }
@@ -50,7 +50,7 @@ public class RecordingInvocation implements MethodInterceptor {
         if(filter != null && filter.isValid()) {
             this.redactedFields.add(filter);
         } else {
-            String message = "Bad redacting field filter passed to shadow invocation for {}: {}";
+            String message = "Bad redacting field filter passed to shadow invocation for %s: %s";
             String className = this.originalInstance.getClass().getSimpleName();
             log.warn(String.format(message, className, filter));
         }
@@ -59,8 +59,8 @@ public class RecordingInvocation implements MethodInterceptor {
 
     public <T> T invoke(Class<T> cls) {
         if(cls == null || this.originalInstance == null || !cls.isInstance(this.originalInstance)) {
-            String message = "Invalid combination of class {} and original instance {}. Returning null.";
-            log.warn(String.format(message, cls, this.originalInstance));
+            String message = "Invalid combination of class %s and original instance %s. Returning null.";
+            log.warn(String.format(message, cls.getSimpleName(), this.originalInstance.getClass().getSimpleName()));
             return null;
         }
         T s = (T)Enhancer.create(cls, this);
@@ -73,9 +73,10 @@ public class RecordingInvocation implements MethodInterceptor {
         try {
             InvocationRecord record = startNewRecording(o, method, args);
         } catch(Throwable t) {
-            String message = "While intercepting recorded invocation. Method={}, Args={}, Object={}.";
+            String message = "While intercepting recorded invocation. Method=%s, Args=%s, Object=%s.";
             String passed = Arrays.toString(args);
-            log.error(String.format(message, method.getName(), passed, this.originalInstance), t);
+            String className = this.originalInstance.getClass().getSimpleName();
+            log.error(String.format(message, method.getName(), passed, className), t);
         }
         return result;
     }
