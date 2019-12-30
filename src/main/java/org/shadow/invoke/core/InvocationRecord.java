@@ -14,7 +14,6 @@ import java.util.*;
 @ToString
 @EqualsAndHashCode
 public class InvocationRecord {
-    private static final int MAX_LEVELS = 10; // TODO: Make this configurable
     private static final Cloner CLONER = new Cloner();
     // Fields excluded for consideration which are NOT transmitted or stored
     private final Map<Class<?>, Set<String>> redactedFields;
@@ -23,9 +22,11 @@ public class InvocationRecord {
     private final List<Object> inputs;
     private final Object output;
     private final Method method;
+    private final int maxRecursionLevels; // for applying redactions
 
     public InvocationRecord(List<FieldFilter> redacted, List<FieldFilter> ignored, List<Object> inputs,
-                            Object output, Method method) {
+                            Object output, Method method, int maxRecursionLevels) {
+        this.maxRecursionLevels = maxRecursionLevels;
         this.redactedFields = new HashMap<>();
         populateMap(this.redactedFields, redacted);
         this.ignoredFields = new HashMap<>();
@@ -44,9 +45,13 @@ public class InvocationRecord {
 
     private void redactFields(Object obj, int level) {
         if(obj == null) return;
-        if(level > MAX_LEVELS) {
+        if(level > this.maxRecursionLevels) {
+            if(this.maxRecursionLevels < 1) {
+                String message = "Bad value for max recursion levels: %d";
+                throw new IllegalArgumentException(String.format(message, this.maxRecursionLevels));
+            }
             String message = "Recursive redacting exceeded limit of %d. Current member class: %s.";
-            log.warn(String.format(message, MAX_LEVELS, obj.getClass().getSimpleName()));
+            log.warn(String.format(message, this.maxRecursionLevels, obj.getClass().getSimpleName()));
             return;
         }
         Class<?> cls = obj.getClass();
@@ -55,9 +60,9 @@ public class InvocationRecord {
                 fld.setAccessible(true);
                 Set<String> redactions = this.redactedFields.get(cls);
                 if (redactions != null && redactions.contains(fld.getName())) {
-                    setMember(obj, RedactedFields.redactedValueOf(fld.getType()), fld);
+                    ReflectiveAccess.setMember(obj, RedactedFields.redactedValueOf(fld.getType()), fld);
                 } else if(shouldRecursivelyRedact(fld)) {
-                    redactFields(getMember(obj, fld), level + 1);
+                    redactFields(ReflectiveAccess.getMember(obj, fld), level + 1);
                 }
             }
         }
@@ -65,25 +70,6 @@ public class InvocationRecord {
 
     private boolean shouldRecursivelyRedact(Field field) {
         return this.redactedFields.containsKey(field.getType()) && RedactedFields.shouldRedactMembers(field);
-    }
-
-    private void setMember(Object parent, Object member, Field field) {
-        try {
-            field.set(parent, member);
-        } catch (IllegalAccessException e) {
-            String message = "While setting field %s of %s";
-            log.error(String.format(message, field.getName(), parent.getClass().getSimpleName()), e);
-        }
-    }
-
-    private Object getMember(Object parent, Field field) {
-        try {
-            return field.get(parent);
-        } catch (IllegalAccessException e) {
-            String message = "While getting field %s of %s";
-            log.error(String.format(message, field.getName(), parent.getClass().getSimpleName()), e);
-        }
-        return null;
     }
 
     private static void populateMap(final Map<Class<?>, Set<String>> map, final List<FieldFilter> filters) {

@@ -12,9 +12,10 @@ public class Recordings {
 
     private Recordings() {}
 
-    public InvocationRecord createAndSave(Object[] inputs, Object output, Method method,
+    public InvocationRecord createAndSave(Object[] inputs, Object output, Method method, int maxLevels,
                                           List<FieldFilter> redacted, List<FieldFilter> ignored) {
-        InvocationRecord recording = new InvocationRecord(redacted, ignored, Arrays.asList(inputs), output, method);
+        List<Object> args = Arrays.asList(inputs);
+        InvocationRecord recording = new InvocationRecord(redacted, ignored, args, output, method, maxLevels);
         String guid = UUID.randomUUID().toString();
         this.threadLocalRecordingGuid.set(guid);
         this.savedRecordings.put(guid, recording);

@@ -1,21 +1,23 @@
 package org.shadow.invoke.client;
 
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 import lombok.extern.slf4j.Slf4j;
 import net.sf.cglib.proxy.Enhancer;
 import net.sf.cglib.proxy.MethodInterceptor;
 import net.sf.cglib.proxy.MethodProxy;
 import org.shadow.invoke.core.FieldFilter;
-import org.shadow.invoke.core.InvocationRecord;
 import org.shadow.invoke.core.Recordings;
 import java.lang.reflect.Method;
 import java.util.*;
 
 @Data
 @Slf4j
+@EqualsAndHashCode
 public class RecordingInvocation implements MethodInterceptor {
     private final Object originalInstance;
     private final List<FieldFilter> redactedFields;
+    private int maxObjectGraphDepth = 10;
 
     protected RecordingInvocation() {
         this(null, new ArrayList<>());
@@ -41,7 +43,8 @@ public class RecordingInvocation implements MethodInterceptor {
         } else {
             String message = "Bad redact filters passed to recording invocation for %s: %s";
             String className = this.originalInstance.getClass().getSimpleName();
-            log.warn(String.format(message, className, filters));
+            String filtersString = Arrays.toString(filters);
+            log.warn(String.format(message, className, filtersString));
         }
         return this;
     }
@@ -51,27 +54,35 @@ public class RecordingInvocation implements MethodInterceptor {
             this.redactedFields.add(filter);
         } else {
             String message = "Bad redacting field filter passed to shadow invocation for %s: %s";
-            String className = this.originalInstance.getClass().getSimpleName();
+            String className = "null";
+            if(this.originalInstance != null && this.originalInstance.getClass() != null) {
+                className = this.originalInstance.getClass().getSimpleName();
+            }
             log.warn(String.format(message, className, filter));
         }
         return this;
     }
 
+    public RecordingInvocation toObjectGraphDepth(int depth) {
+        this.maxObjectGraphDepth = depth;
+        return this;
+    }
+
     public <T> T invoke(Class<T> cls) {
-        if(cls == null || this.originalInstance == null || !cls.isInstance(this.originalInstance)) {
+        if(cls == null || !cls.isInstance(this.originalInstance)) {
             String message = "Invalid combination of class %s and original instance %s. Returning null.";
-            log.warn(String.format(message, cls.getSimpleName(), this.originalInstance.getClass().getSimpleName()));
+            String className = (cls != null)? cls.getSimpleName() : "null";
+            log.warn(String.format(message, className, this.originalInstance.getClass().getSimpleName()));
             return null;
         }
-        T s = (T)Enhancer.create(cls, this);
-        return s;
+        return (T)Enhancer.create(cls, this);
     }
 
     @Override
     public Object intercept(Object o, Method method, Object[] args, MethodProxy proxy) throws Throwable {
         Object result = method.invoke(this.originalInstance, args);
         try {
-            InvocationRecord record = startNewRecording(result, method, args);
+            startNewRecording(result, method, args);
         } catch(Throwable t) {
             String message = "While intercepting recorded invocation. Method=%s, Args=%s, Object=%s.";
             String passed = Arrays.toString(args);
@@ -81,7 +92,12 @@ public class RecordingInvocation implements MethodInterceptor {
         return result;
     }
 
-    protected InvocationRecord startNewRecording(Object output, Method method, Object[] inputs) {
-        return Recordings.INSTANCE.createAndSave(inputs, output, method, this.redactedFields, new ArrayList<>());
+    protected void startNewRecording(Object output, Method method, Object[] inputs) {
+        Recordings.INSTANCE.createAndSave(
+                inputs, output, method,
+                this.maxObjectGraphDepth,
+                this.redactedFields,
+                new ArrayList<>()
+        );
     }
 }

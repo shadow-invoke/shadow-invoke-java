@@ -1,9 +1,9 @@
 package org.shadow.invoke.client;
 
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 import lombok.extern.slf4j.Slf4j;
 import org.shadow.invoke.core.FieldFilter;
-import org.shadow.invoke.core.InvocationRecord;
 import org.shadow.invoke.core.Recordings;
 
 import java.lang.reflect.Method;
@@ -11,6 +11,7 @@ import java.util.*;
 
 @Data
 @Slf4j
+@EqualsAndHashCode(callSuper = true)
 public class ShadowingInvocation extends RecordingInvocation {
     private final List<FieldFilter> ignoredFields;
 
@@ -51,7 +52,11 @@ public class ShadowingInvocation extends RecordingInvocation {
     }
 
     @Override
-    protected InvocationRecord startNewRecording(Object output, Method method, Object[] inputs) {
-        return Recordings.INSTANCE.createAndSave(inputs, output, method, this.getRedactedFields(), this.ignoredFields);
+    protected void startNewRecording(Object output, Method method, Object[] inputs) {
+        Recordings.INSTANCE.createAndSave(
+                inputs, output, method,
+                this.getMaxObjectGraphDepth(),
+                this.getRedactedFields(),
+                this.ignoredFields);
     }
 }
