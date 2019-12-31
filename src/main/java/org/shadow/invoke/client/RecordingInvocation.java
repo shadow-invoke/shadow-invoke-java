@@ -1,7 +1,9 @@
 package org.shadow.invoke.client;
 
+import lombok.AccessLevel;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
+import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import net.sf.cglib.proxy.Enhancer;
 import net.sf.cglib.proxy.MethodInterceptor;
@@ -14,14 +16,11 @@ import java.util.*;
 @Data
 @Slf4j
 @EqualsAndHashCode
+@NoArgsConstructor(force = true, access = AccessLevel.PROTECTED)
 public class RecordingInvocation implements MethodInterceptor {
     private final Object originalInstance;
     private final List<FieldFilter> redactedFields;
     private int maxObjectGraphDepth = 10;
-
-    protected RecordingInvocation() {
-        this(null, new ArrayList<>());
-    }
 
     protected RecordingInvocation(Object instance, List<FieldFilter> redactedFields) {
         this.originalInstance = instance;
