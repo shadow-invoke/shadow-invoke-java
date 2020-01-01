@@ -13,7 +13,7 @@ import java.util.*;
 @Slf4j
 @ToString
 @EqualsAndHashCode
-public class InvocationRecord {
+public class Invocation {
     private static final Cloner CLONER = new Cloner();
     // Fields excluded for consideration which are NOT transmitted or stored
     private final Map<Class<?>, Set<String>> redactedFields;
@@ -24,8 +24,8 @@ public class InvocationRecord {
     private final Method method;
     private final int maxRecursionLevels; // for applying redactions
 
-    public InvocationRecord(List<FieldFilter> redacted, List<FieldFilter> ignored, List<Object> inputs,
-                            Object output, Method method, int maxRecursionLevels) {
+    public Invocation(List<FieldFilter> redacted, List<FieldFilter> ignored, List<Object> inputs,
+                      Object output, Method method, int maxRecursionLevels) {
         this.maxRecursionLevels = maxRecursionLevels;
         this.redactedFields = new HashMap<>();
         populateMap(this.redactedFields, redacted);

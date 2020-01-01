@@ -9,7 +9,7 @@ import net.sf.cglib.proxy.Enhancer;
 import net.sf.cglib.proxy.MethodInterceptor;
 import net.sf.cglib.proxy.MethodProxy;
 import org.shadow.invoke.core.FieldFilter;
-import org.shadow.invoke.core.Recordings;
+import org.shadow.invoke.core.InvocationCache;
 import java.lang.reflect.Method;
 import java.util.*;
 
@@ -17,24 +17,24 @@ import java.util.*;
 @Slf4j
 @EqualsAndHashCode
 @NoArgsConstructor(force = true, access = AccessLevel.PROTECTED)
-public class RecordingInvocation implements MethodInterceptor {
+public class InvocationRecorder implements MethodInterceptor {
     private final Object originalInstance;
     private final List<FieldFilter> redactedFields;
     private int maxObjectGraphDepth = 10;
 
-    protected RecordingInvocation(Object instance, List<FieldFilter> redactedFields) {
+    protected InvocationRecorder(Object instance, List<FieldFilter> redactedFields) {
         this.originalInstance = instance;
         this.redactedFields = redactedFields;
     }
 
-    public static RecordingInvocation record(Object recordedInstance) {
+    public static InvocationRecorder record(Object recordedInstance) {
         if(recordedInstance == null) {
             throw new IllegalArgumentException("Can't create a recording invocation from a null instance.");
         }
-        return new RecordingInvocation(recordedInstance, new ArrayList<>());
+        return new InvocationRecorder(recordedInstance, new ArrayList<>());
     }
 
-    public RecordingInvocation redacting(FieldFilter... filters) {
+    public InvocationRecorder redacting(FieldFilter... filters) {
         if(filters != null && filters.length > 0) {
             for(FieldFilter f : filters) {
                 this.redact(f);
@@ -48,7 +48,7 @@ public class RecordingInvocation implements MethodInterceptor {
         return this;
     }
 
-    public RecordingInvocation redact(FieldFilter filter) {
+    public InvocationRecorder redact(FieldFilter filter) {
         if(filter != null && filter.isValid()) {
             this.redactedFields.add(filter);
         } else {
@@ -62,7 +62,7 @@ public class RecordingInvocation implements MethodInterceptor {
         return this;
     }
 
-    public RecordingInvocation toObjectGraphDepth(int depth) {
+    public InvocationRecorder toObjectGraphDepth(int depth) {
         this.maxObjectGraphDepth = depth;
         return this;
     }
@@ -92,7 +92,7 @@ public class RecordingInvocation implements MethodInterceptor {
     }
 
     protected void startNewRecording(Object output, Method method, Object[] inputs) {
-        Recordings.INSTANCE.createAndSave(
+        InvocationCache.INSTANCE.createAndSave(
                 inputs, output, method,
                 this.maxObjectGraphDepth,
                 this.redactedFields,

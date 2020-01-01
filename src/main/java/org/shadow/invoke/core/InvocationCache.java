@@ -5,24 +5,24 @@ import java.lang.reflect.Method;
 import java.util.*;
 
 @Data
-public class Recordings {
-    private final Map<String, InvocationRecord> savedRecordings = new HashMap<>();
+public class InvocationCache {
+    private final Map<String, Invocation> savedRecordings = new HashMap<>();
     private final ThreadLocal<String> threadLocalRecordingGuid = new ThreadLocal<>();
-    public static final Recordings INSTANCE = new Recordings();
+    public static final InvocationCache INSTANCE = new InvocationCache();
 
-    private Recordings() {}
+    private InvocationCache() {}
 
-    public InvocationRecord createAndSave(Object[] inputs, Object output, Method method, int maxLevels,
-                                          List<FieldFilter> redacted, List<FieldFilter> ignored) {
+    public Invocation createAndSave(Object[] inputs, Object output, Method method, int maxLevels,
+                                    List<FieldFilter> redacted, List<FieldFilter> ignored) {
         List<Object> args = Arrays.asList(inputs);
-        InvocationRecord recording = new InvocationRecord(redacted, ignored, args, output, method, maxLevels);
+        Invocation recording = new Invocation(redacted, ignored, args, output, method, maxLevels);
         String guid = UUID.randomUUID().toString();
         this.threadLocalRecordingGuid.set(guid);
         this.savedRecordings.put(guid, recording);
         return recording;
     }
 
-    public InvocationRecord getThreadLocalRecording() {
+    public Invocation getThreadLocalRecording() {
         if(this.threadLocalRecordingGuid.get() != null) {
             return this.savedRecordings.get(this.threadLocalRecordingGuid.get());
         }

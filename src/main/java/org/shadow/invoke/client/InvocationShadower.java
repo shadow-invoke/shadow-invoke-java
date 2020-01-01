@@ -4,7 +4,7 @@ import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.extern.slf4j.Slf4j;
 import org.shadow.invoke.core.FieldFilter;
-import org.shadow.invoke.core.Recordings;
+import org.shadow.invoke.core.InvocationCache;
 
 import java.lang.reflect.Method;
 import java.util.*;
@@ -12,22 +12,22 @@ import java.util.*;
 @Data
 @Slf4j
 @EqualsAndHashCode(callSuper = true)
-public class ShadowingInvocation extends RecordingInvocation {
+public class InvocationShadower extends InvocationRecorder {
     private final List<FieldFilter> ignoredFields;
 
-    protected ShadowingInvocation(Object instance, List<FieldFilter> redactedFields, List<FieldFilter> ignoredFields) {
+    protected InvocationShadower(Object instance, List<FieldFilter> redactedFields, List<FieldFilter> ignoredFields) {
         super(instance, redactedFields);
         this.ignoredFields = ignoredFields;
     }
 
-    public static ShadowingInvocation shadow(Object shadowedInstance) {
+    public static InvocationShadower shadow(Object shadowedInstance) {
         if(shadowedInstance == null) {
             throw new IllegalArgumentException("Can't create a shadowing invocation from a null instance.");
         }
-        return new ShadowingInvocation(shadowedInstance, new ArrayList<>(), new ArrayList<>());
+        return new InvocationShadower(shadowedInstance, new ArrayList<>(), new ArrayList<>());
     }
 
-    public ShadowingInvocation ignoring(FieldFilter... filters) {
+    public InvocationShadower ignoring(FieldFilter... filters) {
         if(filters != null && filters.length > 0) {
             for(FieldFilter f : filters) {
                 this.ignore(f);
@@ -40,7 +40,7 @@ public class ShadowingInvocation extends RecordingInvocation {
         return this;
     }
 
-    public ShadowingInvocation ignore(FieldFilter filter) {
+    public InvocationShadower ignore(FieldFilter filter) {
         if(filter != null && filter.isValid()) {
             this.ignoredFields.add(filter);
         } else {
@@ -53,7 +53,7 @@ public class ShadowingInvocation extends RecordingInvocation {
 
     @Override
     protected void startNewRecording(Object output, Method method, Object[] inputs) {
-        Recordings.INSTANCE.createAndSave(
+        InvocationCache.INSTANCE.createAndSave(
                 inputs, output, method,
                 this.getMaxObjectGraphDepth(),
                 this.getRedactedFields(),

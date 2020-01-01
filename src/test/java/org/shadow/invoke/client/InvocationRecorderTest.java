@@ -6,17 +6,16 @@ import org.shadow.invoke.Bar;
 import org.shadow.invoke.Baz;
 import org.shadow.invoke.Foo;
 import org.shadow.invoke.Task;
-import org.shadow.invoke.core.FieldFilter;
-import org.shadow.invoke.core.InvocationRecord;
-import org.shadow.invoke.core.Recordings;
+import org.shadow.invoke.core.Invocation;
+import org.shadow.invoke.core.InvocationCache;
 import org.shadow.invoke.core.RedactedFields;
 import java.time.LocalDateTime;
 import java.util.concurrent.TimeUnit;
 import static org.junit.Assert.*;
-import static org.shadow.invoke.client.RecordingInvocation.record;
+import static org.shadow.invoke.client.InvocationRecorder.record;
 import static org.shadow.invoke.core.FieldFilter.from;
 
-public class RecordingInvocationTest {
+public class InvocationRecorderTest {
     private static final Bar bar = new Bar();
     private static final Baz baz = new Baz(
             "Pawn", 75000.00D, 69.5F, 1234L,
@@ -34,7 +33,7 @@ public class RecordingInvocationTest {
                 .toObjectGraphDepth(5)
                 .invoke(Bar.class)
                 .doSomethingShadowed(foo);
-        InvocationRecord recording = Recordings.INSTANCE.getThreadLocalRecording();
+        Invocation recording = InvocationCache.INSTANCE.getThreadLocalRecording();
         assertNotNull(recording);
         assertEquals(recording.getOutput(), bar.doSomethingShadowed(foo));
         assertNotNull(recording.getInputs());
@@ -59,7 +58,7 @@ public class RecordingInvocationTest {
                 .toObjectGraphDepth(5)
                 .invoke(Bar.class)
                 .doSomethingShadowed(foo);
-        InvocationRecord recording = Recordings.INSTANCE.getThreadLocalRecording();
+        Invocation recording = InvocationCache.INSTANCE.getThreadLocalRecording();
         assertNotNull(recording);
         assertEquals(recording.getOutput(), bar.doSomethingShadowed(foo));
         assertNotNull(recording.getInputs());
@@ -85,7 +84,7 @@ public class RecordingInvocationTest {
                 .toObjectGraphDepth(5)
                 .invoke(Bar.class)
                 .doSomethingShadowed(foo);
-        InvocationRecord recording = Recordings.INSTANCE.getThreadLocalRecording();
+        Invocation recording = InvocationCache.INSTANCE.getThreadLocalRecording();
         assertNotNull(recording);
         assertEquals(recording.getOutput(), bar.doSomethingShadowed(foo));
         assertNotNull(recording.getInputs());
