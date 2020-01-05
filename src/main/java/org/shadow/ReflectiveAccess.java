@@ -1,4 +1,4 @@
-package org.shadow.invoke.core;
+package org.shadow;
 
 import lombok.extern.slf4j.Slf4j;
 

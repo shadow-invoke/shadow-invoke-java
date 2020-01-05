@@ -5,6 +5,9 @@ import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.ToString;
 import lombok.extern.slf4j.Slf4j;
+import org.shadow.Redacted;
+import org.shadow.ReflectiveAccess;
+
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.util.*;
@@ -60,7 +63,7 @@ public class Invocation {
                 fld.setAccessible(true);
                 Set<String> redactions = this.redactedFields.get(cls);
                 if (redactions != null && redactions.contains(fld.getName())) {
-                    ReflectiveAccess.setMember(obj, RedactedFields.redactedValueOf(fld.getType()), fld);
+                    ReflectiveAccess.setMember(obj, Redacted.valueOf(fld.getType()), fld);
                 } else if(shouldRecursivelyRedact(fld)) {
                     redactFields(ReflectiveAccess.getMember(obj, fld), level + 1);
                 }
@@ -69,7 +72,7 @@ public class Invocation {
     }
 
     private boolean shouldRecursivelyRedact(Field field) {
-        return this.redactedFields.containsKey(field.getType()) && RedactedFields.shouldRedactMembers(field);
+        return this.redactedFields.containsKey(field.getType()) && Redacted.shouldRedactMembers(field);
     }
 
     private static void populateMap(final Map<Class<?>, Set<String>> map, final List<FieldFilter> filters) {

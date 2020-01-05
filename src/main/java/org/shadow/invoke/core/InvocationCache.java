@@ -7,6 +7,7 @@ import java.util.*;
 @Data
 public class InvocationCache {
     private final Map<String, Invocation> savedRecordings = new HashMap<>();
+    // TODO: Mapped by class+method
     private final ThreadLocal<String> threadLocalRecordingGuid = new ThreadLocal<>();
     public static final InvocationCache INSTANCE = new InvocationCache();
 

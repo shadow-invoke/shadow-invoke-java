@@ -9,5 +9,8 @@ public class FilterBuilder {
     //      noise().from(Foo.class).named("timestamp", "firstName"),
     //      secrets().from(Baz.class).annotated(Secret.class)
     // )
+    // client:  class -> fields -> action + isExcluded
+    // service: class -> excluded fields
+    // mock:    instance + (class -> excluded fields) + mapping -> new I/O
     private Map<Class<?>, Map<FilterReason, List<String>>> filters = new HashMap<>();
 }
