@@ -34,7 +34,7 @@ public class Filter implements Function<Object, Object> {
             if(inTargetClass && (member != null) && this.selector.test(field)) {
                 member = this.action.apply(member);
                 String key = cls.getCanonicalName();
-                // TODO: Record history only on first run somehow
+                // TODO: Transcript history only on first run somehow
                 history.putIfAbsent(key, new HashSet<>());
                 history.get(key).add(field.getName());
             }

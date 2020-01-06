@@ -1,7 +1,7 @@
 package org.shadow;
 
 import org.shadow.field.Filter;
-import org.shadow.invocation.Monitor;
+import org.shadow.invocation.Scribe;
 
 public class Fluently {
     private Fluently() {}
@@ -14,7 +14,7 @@ public class Fluently {
         return new Filter.Builder((obj) -> Redacted.valueOf(obj.getClass())); // redact and note exclusion
     }
 
-    public static Monitor shadow(Object target) {
-        return new Monitor(target);
+    public static Scribe transcribe(Object target) {
+        return new Scribe(target);
     }
 }

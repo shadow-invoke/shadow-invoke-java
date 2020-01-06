@@ -1,22 +1,33 @@
 package org.shadow.invocation;
 
-import lombok.AllArgsConstructor;
+import com.rits.cloning.Cloner;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 import net.sf.cglib.proxy.Enhancer;
 import net.sf.cglib.proxy.MethodInterceptor;
 import net.sf.cglib.proxy.MethodProxy;
+import org.shadow.field.Filter;
 
 import java.lang.reflect.Method;
 import java.util.Arrays;
 
 @Data
 @Slf4j
-@AllArgsConstructor
-public class Monitor implements MethodInterceptor {
+public class Scribe implements MethodInterceptor {
+    private static final Cloner CLONER = new Cloner();
     private final Object originalInstance;
+    private Filter[] filters;
 
-    public <T> T invoke(Class<T> cls) {
+    public Scribe(Object originalInstance) {
+        this.originalInstance = originalInstance;
+    }
+
+    public Scribe filtering(Filter... filters) {
+        this.filters = filters;
+        return this;
+    }
+
+    public <T> T as(Class<T> cls) {
         if(cls == null || !cls.isInstance(this.originalInstance)) {
             String message = "Invalid combination of class %s and original instance %s. Returning null.";
             String className = (cls != null)? cls.getSimpleName() : "null";
@@ -31,7 +42,7 @@ public class Monitor implements MethodInterceptor {
         Object result = method.invoke(this.originalInstance, arguments);
         try {
             // TODO: Filter here, then submit to queue for delivery
-            Record record = new Record(this.originalInstance, method, arguments, result);
+            Transcript transcript = new Transcript(this.originalInstance, method, arguments, result);
         } catch(Throwable t) {
             String message = "While intercepting recorded invocation. Method=%s, Args=%s, Object=%s.";
             String passed = Arrays.toString(arguments);
