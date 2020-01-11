@@ -7,6 +7,7 @@ import net.sf.cglib.proxy.Enhancer;
 import net.sf.cglib.proxy.MethodInterceptor;
 import net.sf.cglib.proxy.MethodProxy;
 import org.shadow.field.Filter;
+import org.shadow.schedule.Schedule;
 
 import java.lang.reflect.Method;
 import java.util.Arrays;
@@ -17,6 +18,7 @@ public class Scribe implements MethodInterceptor {
     private static final Cloner CLONER = new Cloner();
     private final Object originalInstance;
     private Filter[] filters;
+    private Schedule schedule = null;
 
     public Scribe(Object originalInstance) {
         this.originalInstance = originalInstance;
@@ -26,6 +28,14 @@ public class Scribe implements MethodInterceptor {
         this.filters = filters;
         return this;
     }
+
+    public Scribe capturing(Schedule schedule) {
+        this.schedule = schedule;
+        return this;
+    }
+
+    // capturing(percent(5))
+    // capturing(hourly(60))
 
     public <T> T as(Class<T> cls) {
         if(cls == null || !cls.isInstance(this.originalInstance)) {
