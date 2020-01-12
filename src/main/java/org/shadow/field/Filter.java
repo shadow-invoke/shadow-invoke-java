@@ -1,5 +1,6 @@
 package org.shadow.field;
 
+import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
@@ -17,14 +18,25 @@ import java.util.function.Predicate;
 
 @Data
 @Slf4j
-@AllArgsConstructor
+@AllArgsConstructor(access = AccessLevel.PRIVATE)
 public class Filter implements Function<Object, Object> {
+    /**
+     * TODO: Merge filters so they don't all run sequentially.
+     *       Can ignored fields be set to redacted values, but
+     *       set aside in a mapping from path to value? These
+     *       would of course also need to be filtered.
+     */
     private final Predicate<Field> selector;
     private final Function<Object, Object> action;
     private final Class<?> target;
     private final Map<String, Set<String>> history;
+    private final int depth; // depth of recursion when filtering
 
     public Object apply(Object obj) {
+        return apply(obj, 0);
+    }
+
+    private Object apply(Object obj, int level) {
         if(obj == null) return null;
         Class<?> cls = obj.getClass();
         boolean inTargetClass = cls.equals(this.target);
@@ -38,9 +50,8 @@ public class Filter implements Function<Object, Object> {
                 history.putIfAbsent(key, new HashSet<>());
                 history.get(key).add(field.getName());
             }
-            if(areMembersFilterable(field)){
-                // TODO: Control depth of recursion
-                member = this.apply(member);
+            if(level < this.depth && areMembersFilterable(field)){
+                member = this.apply(member, level + 1);
             }
             ReflectiveAccess.setMember(obj, member, field);
         }
@@ -54,6 +65,7 @@ public class Filter implements Function<Object, Object> {
     public static class Builder {
         private Function<Object, Object> action;
         private Class<?> target;
+        private int depth = 15;
 
         public Builder(Function<Object, Object> action) {
             this.action = action;
@@ -64,8 +76,13 @@ public class Filter implements Function<Object, Object> {
             return this;
         }
 
+        public Builder toDepth(int depth) {
+            this.depth = depth;
+            return this;
+        }
+
         public Filter where(Predicate<Field> selector) {
-            return new Filter(selector, this.action, this.target, new HashMap<>());
+            return new Filter(selector, this.action, this.target, new HashMap<>(), this.depth);
         }
     }
 }

@@ -34,9 +34,6 @@ public class Scribe implements MethodInterceptor {
         return this;
     }
 
-    // capturing(percent(5))
-    // capturing(hourly(60))
-
     public <T> T as(Class<T> cls) {
         if(cls == null || !cls.isInstance(this.originalInstance)) {
             String message = "Invalid combination of class %s and original instance %s. Returning null.";

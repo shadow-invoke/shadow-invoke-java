@@ -19,12 +19,12 @@ public class Fluently {
         return new PercentageSchedule(percent);
     }
 
-    public static Schedule every(TimeUnit timeUnit) {
-        return new TimeSchedule(1L, timeUnit);
+    public static Schedule every(long timeDuration, TimeUnit timeUnit) {
+        return new TimeSchedule(timeDuration, timeUnit);
     }
 
-    public static Schedule hourly() {
-        return every(TimeUnit.HOURS);
+    public static Schedule every(TimeUnit timeUnit) {
+        return every(1L, timeUnit);
     }
 
     public static Filter.Builder noise() {
