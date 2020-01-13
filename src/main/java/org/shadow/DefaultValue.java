@@ -3,14 +3,15 @@ package org.shadow;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 
-public class Redacted {
-    private Redacted() {}
+public class DefaultValue {
+    private DefaultValue() {}
 
+    @Deprecated
     public static boolean shouldRedactMembers(Field field) {
-        return (valueOf(field.getType()) == null) && !Modifier.isStatic(field.getModifiers());
+        return (of(field.getType()) == null) && !Modifier.isStatic(field.getModifiers());
     }
 
-    public static Object valueOf(Class<?> cls) {
+    public static Object of(Class<?> cls) {
         if(cls != null) {
             if(isInteger(cls)) {
                 return (int)-1;

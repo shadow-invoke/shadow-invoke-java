@@ -8,7 +8,7 @@ import org.shadow.invoke.Foo;
 import org.shadow.invoke.Task;
 import org.shadow.invoke.core.Invocation;
 import org.shadow.invoke.core.InvocationCache;
-import org.shadow.Redacted;
+import org.shadow.DefaultValue;
 
 import java.time.LocalDateTime;
 import java.util.concurrent.TimeUnit;
@@ -45,8 +45,8 @@ public class InvocationShadowerTest {
         assertTrue(recording.getInputs().size() > 0);
         assertTrue(recording.getInputs().get(0) instanceof Foo);
         Foo redactedFoo = (Foo)recording.getInputs().get(0);
-        assertEquals(redactedFoo.getLastName(), Redacted.valueOf(String.class));
-        assertEquals(redactedFoo.getBaz().getSalary(), Redacted.valueOf(Double.class));
+        assertEquals(redactedFoo.getLastName(), DefaultValue.of(String.class));
+        assertEquals(redactedFoo.getBaz().getSalary(), DefaultValue.of(Double.class));
         assertEquals(redactedFoo.getFirstName(), foo.getFirstName());
         assertEquals(redactedFoo.getTimestamp(), foo.getTimestamp());
         assertEquals(redactedFoo.getBaz().getTitle(), foo.getBaz().getTitle());
@@ -73,8 +73,8 @@ public class InvocationShadowerTest {
         assertTrue(recording.getInputs().size() > 0);
         assertTrue(recording.getInputs().get(0) instanceof Foo);
         Foo redactedFoo = (Foo)recording.getInputs().get(0);
-        assertEquals(redactedFoo.getLastName(), Redacted.valueOf(String.class));
-        assertEquals(redactedFoo.getBaz().getSalary(), Redacted.valueOf(Double.class));
+        assertEquals(redactedFoo.getLastName(), DefaultValue.of(String.class));
+        assertEquals(redactedFoo.getBaz().getSalary(), DefaultValue.of(Double.class));
         assertEquals(redactedFoo.getFirstName(), foo.getFirstName());
         assertEquals(redactedFoo.getTimestamp(), foo.getTimestamp());
         assertEquals(redactedFoo.getBaz().getTitle(), foo.getBaz().getTitle());

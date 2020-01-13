@@ -1,23 +1,23 @@
 package org.shadow.schedule;
 
-import org.shadow.invocation.Transcript;
+import org.shadow.invocation.Recording;
 
 import java.time.Instant;
 import java.util.concurrent.TimeUnit;
 
-public class TimeSchedule implements Schedule {
+public class Time implements Schedule {
     private final TimeUnit timeUnit;
     private final long timeDuration;
     private long startEpochMillis;
 
-    public TimeSchedule(long timeDuration, TimeUnit timeUnit) {
+    public Time(long timeDuration, TimeUnit timeUnit) {
         this.timeUnit = timeUnit;
         this.timeDuration = timeDuration;
         this.startEpochMillis = Instant.now().toEpochMilli();
     }
 
     @Override
-    public boolean accept(Transcript transcript) {
+    public boolean accept(Recording recording) {
         long endEpochMillis = this.startEpochMillis + this.timeUnit.toMillis(this.timeDuration);
         if(Instant.now().toEpochMilli() > endEpochMillis) {
             // TODO: An obvious bug here is that if accept() is called less often than

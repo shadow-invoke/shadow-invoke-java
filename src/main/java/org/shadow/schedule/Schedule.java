@@ -1,7 +1,7 @@
 package org.shadow.schedule;
 
-import org.shadow.invocation.Transcript;
+import org.shadow.invocation.Recording;
 
 public interface Schedule {
-    public boolean accept(Transcript transcript);
+    public boolean accept(Recording recording);
 }

@@ -1,14 +1,14 @@
 package org.shadow.schedule;
 
-import org.shadow.invocation.Transcript;
+import org.shadow.invocation.Recording;
 
 import java.util.Random;
 
-public class PercentageSchedule implements Schedule {
+public class Percentage implements Schedule {
     private final double percentage;
     private final Random random = new Random();
 
-    public PercentageSchedule(double percentage) {
+    public Percentage(double percentage) {
         if(percentage <= 1.0D && percentage >= 0.0D) {
             this.percentage = percentage;
         } else if(percentage <= 100.0D && percentage >= 0.0D) {
@@ -19,7 +19,7 @@ public class PercentageSchedule implements Schedule {
     }
 
     @Override
-    public boolean accept(Transcript transcript) {
+    public boolean accept(Recording recording) {
         return this.random.nextDouble() > this.percentage;
     }
 }
