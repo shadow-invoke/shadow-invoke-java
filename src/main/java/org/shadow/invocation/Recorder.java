@@ -15,7 +15,6 @@ import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.Arrays;
-import java.util.HashSet;
 
 @Data
 @Slf4j
@@ -24,7 +23,7 @@ public class Recorder implements MethodInterceptor {
     private final Object originalInstance;
     private Filter[] filters;
     private Schedule schedule = null;
-    private int depth = 15;
+    private int depth = 10;
 
     public Recorder(Object originalInstance) {
         this.originalInstance = originalInstance;
@@ -61,8 +60,22 @@ public class Recorder implements MethodInterceptor {
         try {
             Object[] referenceArguments = new Object[arguments.length];
             Object[] evaluatedArguments = new Object[arguments.length];
-            // TODO: Filter here, then submit to queue for delivery
-            //Recording recording = new Recording(this.originalInstance, method, arguments, result);
+            for(int i=0;i<arguments.length;++i) {
+                referenceArguments[i] = CLONER.deepClone(arguments[i]);
+                this.filter(referenceArguments[i], 0, false);
+                evaluatedArguments[i] = CLONER.deepClone(arguments[i]);
+                this.filter(evaluatedArguments[i], 0, true);
+            }
+            Object referenceResult = CLONER.deepClone(result);
+            this.filter(referenceResult, 0, false);
+            Object evaluatedResult = CLONER.deepClone(result);
+            this.filter(evaluatedResult, 0, true);
+            Recording recording = new Recording(this.originalInstance,
+                                                method,
+                                                referenceArguments,
+                                                referenceResult,
+                                                evaluatedArguments,
+                                                evaluatedResult);
         } catch(Throwable t) {
             String message = "While intercepting recorded invocation. Method=%s, Args=%s, Object=%s.";
             String passed = Arrays.toString(arguments);
@@ -84,7 +97,7 @@ public class Recorder implements MethodInterceptor {
                     filter.filterAsReferenceCopy(obj, field);
                 }
             }
-            if(level < this.depth && areMembersFilterable(field)){
+            if(level < this.depth && areMembersFilterable(field)) {
                 Object member = ReflectiveAccess.getMember(obj, field);
                 this.filter(member, level + 1, isEvaluated);
             }
