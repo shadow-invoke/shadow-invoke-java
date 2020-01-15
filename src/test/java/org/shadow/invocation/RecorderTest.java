@@ -32,7 +32,7 @@ public class RecorderTest {
                         .filtering(
                                 noise()
                                     .from(Foo.class)
-                                    .where(named("timestampd"))
+                                    .where(named("timestamp"))
                                     .build(),
                                 secrets()
                                     .from(Foo.class)
@@ -48,10 +48,11 @@ public class RecorderTest {
                                     .build()
                         )
                         .build(Bar.class);
+        String result = proxy.doSomethingShadowed(foo);
+        assertEquals(result, bar.doSomethingShadowed(foo));
 
         Recording recording = Recording.QUEUE.poll();
         assertNotNull(recording);
-        assertEquals(recording.getReferenceResult(), bar.doSomethingShadowed(foo));
         assertNotNull(recording.getReferenceArguments());
         assertTrue(recording.getReferenceArguments().length > 0);
         assertTrue(recording.getReferenceArguments()[0] instanceof Foo);
@@ -63,7 +64,7 @@ public class RecorderTest {
         assertEquals(referenceFoo.getBaz().getTitle(), foo.getBaz().getTitle());
         assertEquals(referenceFoo.getBaz().getHeight(), foo.getBaz().getHeight());
         assertEquals(referenceFoo.getBaz().getId(), foo.getBaz().getId());
-        assertEquals(recording.getReferenceResult(), bar.doSomethingShadowed(foo));
+        assertEquals(recording.getReferenceResult(), result);
 
         assertNotNull(recording.getEvaluatedArguments());
         assertTrue(recording.getEvaluatedArguments().length > 0);
@@ -72,9 +73,10 @@ public class RecorderTest {
         assertEquals(evaluatedFoo.getLastName(), DefaultValue.of(String.class));
         assertEquals(evaluatedFoo.getBaz().getSalary(), DefaultValue.of(Double.class));
         assertEquals(evaluatedFoo.getFirstName(), foo.getFirstName());
-        assertEquals(evaluatedFoo.getTimestamp(), foo.getTimestamp());
+        assertEquals(evaluatedFoo.getTimestamp(), DefaultValue.of(LocalDateTime.class));
         assertEquals(evaluatedFoo.getBaz().getTitle(), foo.getBaz().getTitle());
         assertEquals(evaluatedFoo.getBaz().getHeight(), foo.getBaz().getHeight());
-        assertEquals(evaluatedFoo.getBaz().getId(), foo.getBaz().getId());
+        assertEquals(evaluatedFoo.getBaz().getId(), DefaultValue.of(Long.class));
+        assertEquals(recording.getEvaluatedResult(), result);
     }
 }
