@@ -2,10 +2,10 @@ package org.shadow.invoke.client;
 
 import com.google.common.collect.ImmutableMap;
 import org.junit.Test;
-import org.shadow.invoke.Bar;
-import org.shadow.invoke.Baz;
-import org.shadow.invoke.Foo;
-import org.shadow.invoke.Task;
+import org.shadow.Bar;
+import org.shadow.Baz;
+import org.shadow.Foo;
+import org.shadow.Task;
 import org.shadow.invoke.core.Invocation;
 import org.shadow.invoke.core.InvocationCache;
 import org.shadow.DefaultValue;

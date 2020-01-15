@@ -17,7 +17,7 @@ public class Time implements Schedule {
     }
 
     @Override
-    public boolean accept(Recording recording) {
+    public boolean accept() {
         long endEpochMillis = this.startEpochMillis + this.timeUnit.toMillis(this.timeDuration);
         if(Instant.now().toEpochMilli() > endEpochMillis) {
             // TODO: An obvious bug here is that if accept() is called less often than

@@ -1,4 +1,4 @@
-package org.shadow.invoke;
+package org.shadow;
 
 public enum Task {
     DataEntry,

@@ -19,7 +19,7 @@ public class Percentage implements Schedule {
     }
 
     @Override
-    public boolean accept(Recording recording) {
+    public boolean accept() {
         return this.random.nextDouble() > this.percentage;
     }
 }

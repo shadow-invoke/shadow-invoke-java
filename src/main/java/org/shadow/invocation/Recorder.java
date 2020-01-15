@@ -58,24 +58,26 @@ public class Recorder implements MethodInterceptor {
     public Object intercept(Object o, Method method, Object[] arguments, MethodProxy proxy) throws Throwable {
         Object result = method.invoke(this.originalInstance, arguments);
         try {
-            Object[] referenceArguments = new Object[arguments.length];
-            Object[] evaluatedArguments = new Object[arguments.length];
-            for(int i=0;i<arguments.length;++i) {
-                referenceArguments[i] = CLONER.deepClone(arguments[i]);
-                this.filter(referenceArguments[i], 0, false);
-                evaluatedArguments[i] = CLONER.deepClone(arguments[i]);
-                this.filter(evaluatedArguments[i], 0, true);
+            if(this.schedule == null || this.schedule.accept()) {
+                Object[] referenceArguments = new Object[arguments.length];
+                Object[] evaluatedArguments = new Object[arguments.length];
+                for (int i = 0; i < arguments.length; ++i) {
+                    referenceArguments[i] = CLONER.deepClone(arguments[i]);
+                    this.filter(referenceArguments[i], 0, false);
+                    evaluatedArguments[i] = CLONER.deepClone(arguments[i]);
+                    this.filter(evaluatedArguments[i], 0, true);
+                }
+                Object referenceResult = CLONER.deepClone(result);
+                this.filter(referenceResult, 0, false);
+                Object evaluatedResult = CLONER.deepClone(result);
+                this.filter(evaluatedResult, 0, true);
+                Recording recording = new Recording(this.originalInstance,
+                                                    method,
+                                                    referenceArguments,
+                                                    referenceResult,
+                                                    evaluatedArguments,
+                                                    evaluatedResult);
             }
-            Object referenceResult = CLONER.deepClone(result);
-            this.filter(referenceResult, 0, false);
-            Object evaluatedResult = CLONER.deepClone(result);
-            this.filter(evaluatedResult, 0, true);
-            Recording recording = new Recording(this.originalInstance,
-                                                method,
-                                                referenceArguments,
-                                                referenceResult,
-                                                evaluatedArguments,
-                                                evaluatedResult);
         } catch(Throwable t) {
             String message = "While intercepting recorded invocation. Method=%s, Args=%s, Object=%s.";
             String passed = Arrays.toString(arguments);
