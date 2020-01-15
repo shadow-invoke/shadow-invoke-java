@@ -24,7 +24,7 @@ public class RecorderTest {
     private static final Foo foo = new Foo("Bob", "Smith", 35, LocalDateTime.now(), baz);
 
     @Before
-    public void setUp() throws Exception {
+    public void setUp() {
         Recording.QUEUE.clear();
     }
 
@@ -132,5 +132,26 @@ public class RecorderTest {
         assertEquals(evaluatedFoo.getBaz().getHeight(), (float)DefaultValue.of(Float.class), 0.001D);
         assertEquals(evaluatedFoo.getBaz().getId(), DefaultValue.of(Long.class));
         assertEquals(recording.getEvaluatedResult(), result);
+    }
+
+    @Test
+    public void testRecordPercentSchedule() {
+        Bar proxy = record(bar)
+                .filtering(
+                        noise().from(Foo.class).build(),
+                        secrets().from(Foo.class).build(),
+                        noise().from(Baz.class).build(),
+                        secrets().from(Baz.class).build()
+                )
+                .capturing(
+                        percent(0.5)
+                )
+                .build(Bar.class);
+        String expected = bar.doSomethingShadowed(foo);
+        for(int i=0; i<100; ++i) {
+            assertEquals(expected, proxy.doSomethingShadowed(foo));
+        }
+        // TODO: This test is going to be flaky; how to fix?
+        assertTrue(Recording.QUEUE.size() > 25 && Recording.QUEUE.size() < 75);
     }
 }
