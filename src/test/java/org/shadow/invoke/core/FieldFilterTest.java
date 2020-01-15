@@ -1,9 +1,7 @@
 package org.shadow.invoke.core;
 
 import org.junit.Test;
-import org.shadow.invoke.Baz;
-
-import java.util.Set;
+import org.shadow.Baz;
 
 import static org.junit.Assert.*;
 

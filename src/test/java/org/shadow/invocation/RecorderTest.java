@@ -4,14 +4,13 @@ import com.google.common.collect.ImmutableMap;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
-import org.shadow.Bar;
-import org.shadow.Baz;
-import org.shadow.Foo;
-import org.shadow.Task;
+import org.shadow.*;
 
 import java.time.LocalDateTime;
 import java.util.concurrent.TimeUnit;
 
+import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
 import static org.shadow.Fluently.*;
 
 public class RecorderTest {
@@ -24,10 +23,7 @@ public class RecorderTest {
 
     @Before
     public void setUp() throws Exception {
-    }
-
-    @After
-    public void tearDown() throws Exception {
+        Recording.QUEUE.clear();
     }
 
     @Test
@@ -52,5 +48,33 @@ public class RecorderTest {
                                     .build()
                         )
                         .build(Bar.class);
+
+        Recording recording = Recording.QUEUE.poll();
+        assertNotNull(recording);
+        assertEquals(recording.getReferenceResult(), bar.doSomethingShadowed(foo));
+        assertNotNull(recording.getReferenceArguments());
+        assertTrue(recording.getReferenceArguments().length > 0);
+        assertTrue(recording.getReferenceArguments()[0] instanceof Foo);
+        Foo referenceFoo = (Foo)recording.getReferenceArguments()[0];
+        assertEquals(referenceFoo.getLastName(), DefaultValue.of(String.class));
+        assertEquals(referenceFoo.getBaz().getSalary(), DefaultValue.of(Double.class));
+        assertEquals(referenceFoo.getFirstName(), foo.getFirstName());
+        assertEquals(referenceFoo.getTimestamp(), foo.getTimestamp());
+        assertEquals(referenceFoo.getBaz().getTitle(), foo.getBaz().getTitle());
+        assertEquals(referenceFoo.getBaz().getHeight(), foo.getBaz().getHeight());
+        assertEquals(referenceFoo.getBaz().getId(), foo.getBaz().getId());
+        assertEquals(recording.getReferenceResult(), bar.doSomethingShadowed(foo));
+
+        assertNotNull(recording.getEvaluatedArguments());
+        assertTrue(recording.getEvaluatedArguments().length > 0);
+        assertTrue(recording.getEvaluatedArguments()[0] instanceof Foo);
+        Foo evaluatedFoo = (Foo)recording.getEvaluatedArguments()[0];
+        assertEquals(evaluatedFoo.getLastName(), DefaultValue.of(String.class));
+        assertEquals(evaluatedFoo.getBaz().getSalary(), DefaultValue.of(Double.class));
+        assertEquals(evaluatedFoo.getFirstName(), foo.getFirstName());
+        assertEquals(evaluatedFoo.getTimestamp(), foo.getTimestamp());
+        assertEquals(evaluatedFoo.getBaz().getTitle(), foo.getBaz().getTitle());
+        assertEquals(evaluatedFoo.getBaz().getHeight(), foo.getBaz().getHeight());
+        assertEquals(evaluatedFoo.getBaz().getId(), foo.getBaz().getId());
     }
 }

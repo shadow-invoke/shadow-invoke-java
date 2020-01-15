@@ -77,6 +77,7 @@ public class Recorder implements MethodInterceptor {
                                                     referenceResult,
                                                     evaluatedArguments,
                                                     evaluatedResult);
+                Recording.QUEUE.add(recording);
             }
         } catch(Throwable t) {
             String message = "While intercepting recorded invocation. Method=%s, Args=%s, Object=%s.";
