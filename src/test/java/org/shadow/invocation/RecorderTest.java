@@ -5,6 +5,8 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.shadow.*;
+import org.shadow.field.Noise;
+import org.shadow.field.Secret;
 
 import java.time.LocalDateTime;
 import java.util.concurrent.TimeUnit;
@@ -27,7 +29,7 @@ public class RecorderTest {
     }
 
     @Test
-    public void testRecordNoiseSecrets() {
+    public void testRecordNoiseSecretsNamed() {
         Bar proxy = record(bar)
                         .filtering(
                                 noise()
@@ -76,6 +78,58 @@ public class RecorderTest {
         assertEquals(evaluatedFoo.getTimestamp(), DefaultValue.of(LocalDateTime.class));
         assertEquals(evaluatedFoo.getBaz().getTitle(), foo.getBaz().getTitle());
         assertEquals(evaluatedFoo.getBaz().getHeight(), foo.getBaz().getHeight());
+        assertEquals(evaluatedFoo.getBaz().getId(), DefaultValue.of(Long.class));
+        assertEquals(recording.getEvaluatedResult(), result);
+    }
+
+    @Test
+    public void testRecordNoiseSecretsAnnotated() {
+        Bar proxy = record(bar)
+                .filtering(
+                        noise()
+                                .from(Foo.class)
+                                .where(annotated(Noise.class))
+                                .build(),
+                        secrets()
+                                .from(Foo.class)
+                                .where(annotated(Secret.class))
+                                .build(),
+                        noise()
+                                .from(Baz.class) // annotated is default predicate
+                                .build(),
+                        secrets()
+                                .from(Baz.class) // annotated is default predicate
+                                .build()
+                )
+                .build(Bar.class);
+        String result = proxy.doSomethingShadowed(foo);
+        assertEquals(result, bar.doSomethingShadowed(foo));
+
+        Recording recording = Recording.QUEUE.poll();
+        assertNotNull(recording);
+        assertNotNull(recording.getReferenceArguments());
+        assertTrue(recording.getReferenceArguments().length > 0);
+        assertTrue(recording.getReferenceArguments()[0] instanceof Foo);
+        Foo referenceFoo = (Foo)recording.getReferenceArguments()[0];
+        assertEquals(referenceFoo.getLastName(), DefaultValue.of(String.class));
+        assertEquals(referenceFoo.getBaz().getSalary(), foo.getBaz().getSalary(), 0.001D);
+        assertEquals(referenceFoo.getFirstName(), foo.getFirstName());
+        assertEquals(referenceFoo.getTimestamp(), foo.getTimestamp());
+        assertEquals(referenceFoo.getBaz().getTitle(), foo.getBaz().getTitle());
+        assertEquals(referenceFoo.getBaz().getHeight(), (float)DefaultValue.of(Float.class), 0.001D);
+        assertEquals(referenceFoo.getBaz().getId(), foo.getBaz().getId());
+        assertEquals(recording.getReferenceResult(), result);
+
+        assertNotNull(recording.getEvaluatedArguments());
+        assertTrue(recording.getEvaluatedArguments().length > 0);
+        assertTrue(recording.getEvaluatedArguments()[0] instanceof Foo);
+        Foo evaluatedFoo = (Foo)recording.getEvaluatedArguments()[0];
+        assertEquals(evaluatedFoo.getLastName(), DefaultValue.of(String.class));
+        assertEquals(evaluatedFoo.getBaz().getSalary(), foo.getBaz().getSalary(), 0.001D);
+        assertEquals(evaluatedFoo.getFirstName(), foo.getFirstName());
+        assertEquals(evaluatedFoo.getTimestamp(), DefaultValue.of(LocalDateTime.class));
+        assertEquals(evaluatedFoo.getBaz().getTitle(), foo.getBaz().getTitle());
+        assertEquals(evaluatedFoo.getBaz().getHeight(), (float)DefaultValue.of(Float.class), 0.001D);
         assertEquals(evaluatedFoo.getBaz().getId(), DefaultValue.of(Long.class));
         assertEquals(recording.getEvaluatedResult(), result);
     }

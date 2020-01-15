@@ -44,7 +44,7 @@ public class Fluently {
     public static Predicate<Field> annotated(Class<? extends Annotation> cls) {
         return field -> {
             if(field == null || cls == null) return false;
-            return field.getDeclaredAnnotation(cls) == null;
+            return field.getDeclaredAnnotation(cls) != null;
         };
     }
 
