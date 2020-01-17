@@ -6,7 +6,7 @@ import org.shadow.field.Secret;
 import org.shadow.invocation.Recorder;
 import org.shadow.schedule.Percentage;
 import org.shadow.schedule.Schedule;
-import org.shadow.schedule.Time;
+import org.shadow.schedule.Rate;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Field;
@@ -25,8 +25,12 @@ public class Fluently {
         return new Percentage(percent);
     }
 
+    public static Schedule rate(int max) {
+        return new Rate(max);
+    }
+
     public static Schedule every(long timeDuration, TimeUnit timeUnit) {
-        return new Time(timeDuration, timeUnit);
+        return new Rate(1).per(timeDuration, timeUnit);
     }
 
     public static Schedule every(TimeUnit timeUnit) {

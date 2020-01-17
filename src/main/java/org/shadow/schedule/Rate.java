@@ -1,23 +1,37 @@
 package org.shadow.schedule;
 
+import lombok.extern.slf4j.Slf4j;
 import org.shadow.invocation.Recording;
 
 import java.time.Instant;
 import java.util.concurrent.TimeUnit;
 
-public class Time implements Schedule {
-    private final TimeUnit timeUnit;
-    private final long timeDuration;
+@Slf4j
+public class Rate implements Schedule {
+    private TimeUnit timeUnit;
+    private long timeDuration;
+    private int acceptsPerDuration;
+    private int acceptedThisInterval;
     private long startEpochMillis;
 
-    public Time(long timeDuration, TimeUnit timeUnit) {
+    public Rate(int acceptsPerDuration) {
+        this.acceptsPerDuration = acceptsPerDuration;
+        this.acceptedThisInterval = 0;
+    }
+
+    public Rate per(long timeDuration, TimeUnit timeUnit) {
         this.timeUnit = timeUnit;
         this.timeDuration = timeDuration;
         this.startEpochMillis = Instant.now().toEpochMilli();
+        return this;
     }
 
     @Override
     public boolean accept() {
+        if(this.timeUnit == null) {
+            log.warn("No time unit or duration was set for this rate schedule. Never accepting");
+            return false;
+        }
         long endEpochMillis = this.startEpochMillis + this.timeUnit.toMillis(this.timeDuration);
         if(Instant.now().toEpochMilli() > endEpochMillis) {
             // TODO: An obvious bug here is that if accept() is called less often than
@@ -26,6 +40,10 @@ public class Time implements Schedule {
             //       enough to what one would expect. A more robust implementation
             //       might use a buffer of time-stamped transcripts and a timer.
             this.startEpochMillis = endEpochMillis;
+            this.acceptedThisInterval = 1;
+            return true;
+        } else if(this.acceptedThisInterval < this.acceptsPerDuration) {
+            this.acceptedThisInterval++;
             return true;
         }
         return false;

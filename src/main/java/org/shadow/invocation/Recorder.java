@@ -1,7 +1,7 @@
 package org.shadow.invocation;
 
 import com.rits.cloning.Cloner;
-import lombok.Data;
+import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import net.sf.cglib.proxy.Enhancer;
 import net.sf.cglib.proxy.MethodInterceptor;
@@ -9,20 +9,22 @@ import net.sf.cglib.proxy.MethodProxy;
 import org.shadow.DefaultValue;
 import org.shadow.ReflectiveAccess;
 import org.shadow.field.Filter;
+import org.shadow.invocation.transmission.Transmitter;
 import org.shadow.schedule.Schedule;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
-import java.util.Arrays;
 
-@Data
 @Slf4j
 public class Recorder implements MethodInterceptor {
     private static final Cloner CLONER = new Cloner();
     private final Object originalInstance;
     private Filter[] filters;
+    @Getter
     private Schedule schedule = null;
+    @Getter
+    private Transmitter transmitter = null;
     private int depth = 10;
 
     public Recorder(Object originalInstance) {
@@ -41,6 +43,11 @@ public class Recorder implements MethodInterceptor {
 
     public Recorder capturing(Schedule schedule) {
         this.schedule = schedule;
+        return this;
+    }
+
+    public Recorder sending(Transmitter transmitter) {
+        this.transmitter = transmitter;
         return this;
     }
 
@@ -80,10 +87,9 @@ public class Recorder implements MethodInterceptor {
                 Recording.QUEUE.add(recording);
             }
         } catch(Throwable t) {
-            String message = "While intercepting recorded invocation. Method=%s, Args=%s, Object=%s.";
-            String passed = Arrays.toString(arguments);
+            String message = "While intercepting recorded invocation. Method=%s, Args=%d, Object=%s.";
             String className = this.originalInstance.getClass().getSimpleName();
-            log.error(String.format(message, method.getName(), passed, className), t);
+            log.error(String.format(message, method.getName(), arguments.length, className), t);
         }
         return result;
     }
