@@ -1,7 +1,9 @@
 package org.shadow.invocation;
 
 import com.google.common.collect.ImmutableMap;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.TestName;
 import org.shadow.*;
 import org.shadow.field.Noise;
 import org.shadow.field.Secret;
@@ -10,12 +12,14 @@ import org.shadow.invocation.transmission.Transmitter;
 
 import java.time.LocalDateTime;
 import java.util.Collection;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
 import static org.junit.Assert.*;
 import static org.shadow.Fluently.*;
 
 public class RecorderTest {
+    @Rule public TestName testName = new TestName();
     private static final Bar bar = new Bar();
     private static final Baz baz = new Baz(
             "Pawn", 75000.00D, 69.5F, 1234L,
@@ -25,7 +29,8 @@ public class RecorderTest {
     private static final String result = bar.doSomethingShadowed(foo);
 
     @Test
-    public void testRecordNoiseSecretsNamed() {
+    public void testRecordNoiseSecretsNamed() throws InterruptedException {
+        final CountDownLatch lock = new CountDownLatch(1);
         Bar proxy = record(bar)
                         .filteringOut(
                                 noise().from(Foo.class).where(named("timestamp")),
@@ -39,6 +44,7 @@ public class RecorderTest {
                                 assertEquals(recordings.size(), 1);
                                 Recording recording = recordings.iterator().next();
                                 assertNotNull(recording);
+                                System.out.println(testName.getMethodName() + ": got recording " + recording.toString());
                                 assertNotNull(recording.getReferenceArguments());
                                 assertTrue(recording.getReferenceArguments().length > 0);
                                 assertTrue(recording.getReferenceArguments()[0] instanceof Foo);
@@ -64,14 +70,17 @@ public class RecorderTest {
                                 assertEquals(evaluatedFoo.getBaz().getHeight(), foo.getBaz().getHeight());
                                 assertEquals(evaluatedFoo.getBaz().getId(), DefaultValue.of(Long.class));
                                 assertEquals(recording.getEvaluatedResult(), result);
+                                lock.countDown();
                             }
                         })
                         .proxyingAs(Bar.class);
         assertEquals(result, proxy.doSomethingShadowed(foo));
+        lock.await(4000, TimeUnit.MILLISECONDS);
     }
 
     @Test
-    public void testRecordNoiseSecretsAnnotated() {
+    public void testRecordNoiseSecretsAnnotated() throws InterruptedException {
+        final CountDownLatch lock = new CountDownLatch(1);
         Bar proxy = record(bar)
                 .filteringOut(
                         noise().from(Foo.class).where(annotated(Noise.class)),
@@ -85,6 +94,7 @@ public class RecorderTest {
                         assertEquals(recordings.size(), 1);
                         Recording recording = recordings.iterator().next();
                         assertNotNull(recording);
+                        System.out.println(testName.getMethodName() + ": got recording " + recording.toString());
                         assertNotNull(recording.getReferenceArguments());
                         assertTrue(recording.getReferenceArguments().length > 0);
                         assertTrue(recording.getReferenceArguments()[0] instanceof Foo);
@@ -110,14 +120,17 @@ public class RecorderTest {
                         assertEquals(evaluatedFoo.getBaz().getHeight(), (float)DefaultValue.of(Float.class), 0.001D);
                         assertEquals(evaluatedFoo.getBaz().getId(), DefaultValue.of(Long.class));
                         assertEquals(recording.getEvaluatedResult(), result);
+                        lock.countDown();
                     }
                 })
                 .proxyingAs(Bar.class);
         assertEquals(result, proxy.doSomethingShadowed(foo));
+        lock.await(4000, TimeUnit.MILLISECONDS);
     }
 
     @Test
-    public void testPercentThrottling() {
+    public void testPercentThrottling() throws InterruptedException {
+        final CountDownLatch lock = new CountDownLatch(1);
         Bar proxy = record(bar)
                 .filteringOut(
                         noise().from(Foo.class),
@@ -131,18 +144,22 @@ public class RecorderTest {
                 .sendingTo(new Transmitter() {
                     @Override
                     public void transmit(Collection<Recording> recordings) throws TransmissionException {
+                        System.out.println(testName.getMethodName() + ": got batch of size " + recordings.size());
                         // TODO: This test is going to be flaky; how to fix?
                         assertTrue(recordings.size() > 25 && recordings.size() < 75);
+                        lock.countDown();
                     }
                 })
                 .proxyingAs(Bar.class);
         for(int i=0; i<100; ++i) {
             assertEquals(result, proxy.doSomethingShadowed(foo));
         }
+        lock.await(4000, TimeUnit.MILLISECONDS);
     }
 
     @Test
-    public void testRateThrottling() {
+    public void testRateThrottling() throws InterruptedException {
+        final CountDownLatch lock = new CountDownLatch(1);
         Bar proxy = record(bar)
                 .filteringOut(
                         noise().from(Foo.class),
@@ -156,11 +173,13 @@ public class RecorderTest {
                 .sendingTo(new Transmitter() {
                     @Override
                     public void transmit(Collection<Recording> recordings) throws TransmissionException {
+                        System.out.println(testName.getMethodName() + ": got batch of size " + recordings.size());
                         assertEquals(recordings.size(), 4);
+                        lock.countDown();
                     }
                 })
                 .proxyingAs(Bar.class);
-        for(int i=0; i<8; ++i) {
+        for(int i=0; i<6; ++i) {
             assertEquals(result, proxy.doSomethingShadowed(foo));
             try {
                 Thread.sleep(250L);
@@ -168,5 +187,6 @@ public class RecorderTest {
                 e.printStackTrace();
             }
         }
+        lock.await(4000, TimeUnit.MILLISECONDS);
     }
 }

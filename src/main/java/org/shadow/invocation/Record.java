@@ -28,12 +28,15 @@ public enum Record {
     private final ScheduledExecutorService SCHEDULER = Executors.newSingleThreadScheduledExecutor();
     private static final int MAX_QUEUE_SIZE = 1024; // TODO: Make configurable
     // TODO: Make the size configurable using something like cache(max(1024)) or caching(ttl(1, HOUR))
-    private final Queue<Recording> QUEUE = QueueUtils.synchronizedQueue(new CircularFifoQueue<>(1024));
     private final Map<String, Transmitter> invocationKeyToTransmitter = new HashMap<>();
     private final Map<String, Queue<Recording>> invocationKeyToPendingQueue = new HashMap<>();
 
     Record() {
-        SCHEDULER.scheduleAtFixedRate(this::transmitPending, 0L, 5L, TimeUnit.SECONDS); // TODO: Make configurable
+        SCHEDULER.scheduleAtFixedRate(this::transmitPending, 0L, 2L, TimeUnit.SECONDS); // TODO: Make configurable
+    }
+
+    public int numberPending() {
+        return invocationKeyToPendingQueue.values().stream().collect(Collectors.summingInt(q -> q.size()));
     }
 
     private void transmitPending() {
