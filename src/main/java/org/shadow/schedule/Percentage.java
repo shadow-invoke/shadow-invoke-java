@@ -1,10 +1,8 @@
 package org.shadow.schedule;
 
-import org.shadow.invocation.Recording;
-
 import java.util.Random;
 
-public class Percentage implements Schedule {
+public class Percentage implements Throttle {
     private final double percentage;
     private final Random random = new Random();
 
@@ -14,7 +12,7 @@ public class Percentage implements Schedule {
         } else if(percentage <= 100.0D && percentage >= 0.0D) {
             this.percentage = percentage / 100.0D;
         } else {
-            throw new IllegalArgumentException(String.format("Not a percentage: %d", percentage));
+            throw new IllegalArgumentException(String.format("Not a percentage: %f", percentage));
         }
     }
 

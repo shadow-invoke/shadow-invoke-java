@@ -10,48 +10,47 @@ import org.shadow.DefaultValue;
 import org.shadow.ReflectiveAccess;
 import org.shadow.field.Filter;
 import org.shadow.invocation.transmission.Transmitter;
-import org.shadow.schedule.Schedule;
+import org.shadow.schedule.Throttle;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
+import java.util.Arrays;
 
 @Slf4j
 public class Recorder implements MethodInterceptor {
     private static final Cloner CLONER = new Cloner();
     private final Object originalInstance;
     private Filter[] filters;
-    @Getter
-    private Schedule schedule = null;
-    @Getter
-    private Transmitter transmitter = null;
-    private int depth = 10;
+    @Getter private Throttle throttle = null;
+    @Getter private Transmitter transmitter = null;
+    private int objectDepth = 10;
 
     public Recorder(Object originalInstance) {
         this.originalInstance = originalInstance;
     }
 
-    public Recorder filtering(Filter... filters) {
-        this.filters = filters;
+    public Recorder filteringOut(Filter.Builder... filters) {
+        this.filters = Arrays.stream(filters).map(Filter.Builder::build).toArray(Filter[]::new);
         return this;
     }
 
-    public Recorder toDepth(int depth) {
-        this.depth = depth;
+    public Recorder toDepth(int objectDepth) {
+        this.objectDepth = objectDepth;
         return this;
     }
 
-    public Recorder capturing(Schedule schedule) {
-        this.schedule = schedule;
+    public Recorder throttlingTo(Throttle throttle) {
+        this.throttle = throttle;
         return this;
     }
 
-    public Recorder sending(Transmitter transmitter) {
+    public Recorder sendingTo(Transmitter transmitter) {
         this.transmitter = transmitter;
         return this;
     }
 
-    public <T> T build(Class<T> cls) {
+    public <T> T proxyingAs(Class<T> cls) {
         if(cls == null || !cls.isInstance(this.originalInstance)) {
             String message = "Invalid combination of class %s and original instance %s. Returning null.";
             String className = (cls != null)? cls.getSimpleName() : "null";
@@ -65,7 +64,7 @@ public class Recorder implements MethodInterceptor {
     public Object intercept(Object o, Method method, Object[] arguments, MethodProxy proxy) throws Throwable {
         Object result = method.invoke(this.originalInstance, arguments);
         try {
-            if(this.schedule == null || this.schedule.accept()) {
+            if(this.throttle == null || this.throttle.accept()) {
                 Object[] referenceArguments = new Object[arguments.length];
                 Object[] evaluatedArguments = new Object[arguments.length];
                 for (int i = 0; i < arguments.length; ++i) {
@@ -106,14 +105,11 @@ public class Recorder implements MethodInterceptor {
                     filter.filterAsReferenceCopy(obj, field);
                 }
             }
-            if(level < this.depth && areMembersFilterable(field)) {
+            boolean filterable = (DefaultValue.of(field.getType()) == null) && !Modifier.isStatic(field.getModifiers());
+            if(level < this.objectDepth && filterable) {
                 Object member = ReflectiveAccess.getMember(obj, field);
                 this.filter(member, level + 1, isEvaluated);
             }
         }
-    }
-
-    private static boolean areMembersFilterable(Field field) {
-        return (DefaultValue.of(field.getType()) == null) && !Modifier.isStatic(field.getModifiers());
     }
 }

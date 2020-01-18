@@ -1,13 +1,12 @@
 package org.shadow.schedule;
 
 import lombok.extern.slf4j.Slf4j;
-import org.shadow.invocation.Recording;
 
 import java.time.Instant;
 import java.util.concurrent.TimeUnit;
 
 @Slf4j
-public class Rate implements Schedule {
+public class Rate implements Throttle {
     private TimeUnit timeUnit;
     private long timeDuration;
     private int acceptsPerDuration;

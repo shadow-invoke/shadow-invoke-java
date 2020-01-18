@@ -1,7 +1,6 @@
 package org.shadow.invocation;
 
 import com.google.common.collect.ImmutableMap;
-import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.shadow.*;
@@ -12,7 +11,6 @@ import java.time.LocalDateTime;
 import java.util.concurrent.TimeUnit;
 
 import static org.junit.Assert.*;
-import static org.junit.Assert.assertEquals;
 import static org.shadow.Fluently.*;
 
 public class RecorderTest {
@@ -31,25 +29,13 @@ public class RecorderTest {
     @Test
     public void testRecordNoiseSecretsNamed() {
         Bar proxy = record(bar)
-                        .filtering(
-                                noise()
-                                    .from(Foo.class)
-                                    .where(named("timestamp"))
-                                    .build(),
-                                secrets()
-                                    .from(Foo.class)
-                                    .where(named("lastName"))
-                                    .build(),
-                                noise()
-                                    .from(Baz.class)
-                                    .where(named("id"))
-                                    .build(),
-                                secrets()
-                                    .from(Baz.class)
-                                    .where(named("salary"))
-                                    .build()
+                        .filteringOut(
+                                noise().from(Foo.class).where(named("timestamp")),
+                                secrets().from(Foo.class).where(named("lastName")),
+                                noise().from(Baz.class).where(named("id")),
+                                secrets().from(Baz.class).where(named("salary"))
                         )
-                        .build(Bar.class);
+                        .proxyingAs(Bar.class);
         String result = proxy.doSomethingShadowed(foo);
         assertEquals(result, bar.doSomethingShadowed(foo));
 
@@ -85,23 +71,13 @@ public class RecorderTest {
     @Test
     public void testRecordNoiseSecretsAnnotated() {
         Bar proxy = record(bar)
-                .filtering(
-                        noise()
-                                .from(Foo.class)
-                                .where(annotated(Noise.class))
-                                .build(),
-                        secrets()
-                                .from(Foo.class)
-                                .where(annotated(Secret.class))
-                                .build(),
-                        noise()
-                                .from(Baz.class) // annotated is default predicate
-                                .build(),
-                        secrets()
-                                .from(Baz.class) // annotated is default predicate
-                                .build()
+                .filteringOut(
+                        noise().from(Foo.class).where(annotated(Noise.class)),
+                        secrets().from(Foo.class).where(annotated(Secret.class)),
+                        noise().from(Baz.class), // annotated is default predicate
+                        secrets().from(Baz.class) // annotated is default predicate
                 )
-                .build(Bar.class);
+                .proxyingAs(Bar.class);
         String result = proxy.doSomethingShadowed(foo);
         assertEquals(result, bar.doSomethingShadowed(foo));
 
@@ -137,21 +113,46 @@ public class RecorderTest {
     @Test
     public void testRecordPercentSchedule() {
         Bar proxy = record(bar)
-                .filtering(
-                        noise().from(Foo.class).build(),
-                        secrets().from(Foo.class).build(),
-                        noise().from(Baz.class).build(),
-                        secrets().from(Baz.class).build()
+                .filteringOut(
+                        noise().from(Foo.class),
+                        secrets().from(Foo.class),
+                        noise().from(Baz.class),
+                        secrets().from(Baz.class)
                 )
-                .capturing(
+                .throttlingTo(
                         percent(0.5)
                 )
-                .build(Bar.class);
+                .proxyingAs(Bar.class);
         String expected = bar.doSomethingShadowed(foo);
         for(int i=0; i<100; ++i) {
             assertEquals(expected, proxy.doSomethingShadowed(foo));
         }
         // TODO: This test is going to be flaky; how to fix?
         assertTrue(Recording.QUEUE.size() > 25 && Recording.QUEUE.size() < 75);
+    }
+
+    @Test
+    public void testRecordEverySecondSchedule() {
+        Bar proxy = record(bar)
+                .filteringOut(
+                        noise().from(Foo.class),
+                        secrets().from(Foo.class),
+                        noise().from(Baz.class),
+                        secrets().from(Baz.class)
+                )
+                .throttlingTo(
+                        rate(2).per(1L, TimeUnit.SECONDS)
+                )
+                .proxyingAs(Bar.class);
+        String expected = bar.doSomethingShadowed(foo);
+        for(int i=0; i<8; ++i) {
+            assertEquals(expected, proxy.doSomethingShadowed(foo));
+            try {
+                Thread.sleep(250L);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+        }
+        assertEquals(Recording.QUEUE.size(), 4);
     }
 }

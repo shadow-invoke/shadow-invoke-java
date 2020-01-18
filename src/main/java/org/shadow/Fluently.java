@@ -5,8 +5,8 @@ import org.shadow.field.Noise;
 import org.shadow.field.Secret;
 import org.shadow.invocation.Recorder;
 import org.shadow.schedule.Percentage;
-import org.shadow.schedule.Schedule;
 import org.shadow.schedule.Rate;
+import org.shadow.schedule.Throttle;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Field;
@@ -17,23 +17,23 @@ import java.util.function.Predicate;
 public class Fluently {
     private Fluently() {}
 
-    public static Schedule percent(int percent) {
-        return new Percentage((double)percent);
-    }
-
-    public static Schedule percent(double percent) {
+    public static Throttle percent(int percent) {
         return new Percentage(percent);
     }
 
-    public static Schedule rate(int max) {
+    public static Throttle percent(double percent) {
+        return new Percentage(percent);
+    }
+
+    public static Rate rate(int max) {
         return new Rate(max);
     }
 
-    public static Schedule every(long timeDuration, TimeUnit timeUnit) {
+    public static Throttle every(long timeDuration, TimeUnit timeUnit) {
         return new Rate(1).per(timeDuration, timeUnit);
     }
 
-    public static Schedule every(TimeUnit timeUnit) {
+    public static Throttle every(TimeUnit timeUnit) {
         return every(1L, timeUnit);
     }
 
@@ -41,7 +41,7 @@ public class Fluently {
         // TODO: Make more efficient using actual class and hashset.
         return field -> {
             if(field == null || names == null || names.length == 0) return false;
-            return Arrays.stream(names).anyMatch(field.getName()::equals);
+            return Arrays.asList(names).contains(field.getName());
         };
     }
 
