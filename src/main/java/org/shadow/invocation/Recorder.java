@@ -10,7 +10,7 @@ import org.shadow.DefaultValue;
 import org.shadow.ReflectiveAccess;
 import org.shadow.field.Filter;
 import org.shadow.invocation.transmission.Transmitter;
-import org.shadow.schedule.Throttle;
+import org.shadow.throttling.Throttle;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
@@ -60,31 +60,31 @@ public class Recorder implements MethodInterceptor {
         return (T)Enhancer.create(cls, this);
     }
 
+    private Object[] cloneArguments(Object[] arguments, boolean isEvaluated) {
+        Object[] copy = new Object[arguments.length];
+        for (int i = 0; i < arguments.length; ++i) {
+            copy[i] = CLONER.deepClone(arguments[i]);
+            this.filter(copy[i], 0, isEvaluated);
+        }
+        return copy;
+    }
+
+    private Object cloneResult(Object result, boolean isEvaluated) {
+        Object copy = CLONER.deepClone(result);
+        this.filter(copy, 0, false);
+        return copy;
+    }
+
     @Override
     public Object intercept(Object o, Method method, Object[] arguments, MethodProxy proxy) throws Throwable {
         Object result = method.invoke(this.originalInstance, arguments);
         try {
-            if(this.throttle == null || this.throttle.accept()) {
-                Object[] referenceArguments = new Object[arguments.length];
-                Object[] evaluatedArguments = new Object[arguments.length];
-                for (int i = 0; i < arguments.length; ++i) {
-                    referenceArguments[i] = CLONER.deepClone(arguments[i]);
-                    this.filter(referenceArguments[i], 0, false);
-                    evaluatedArguments[i] = CLONER.deepClone(arguments[i]);
-                    this.filter(evaluatedArguments[i], 0, true);
-                }
-                Object referenceResult = CLONER.deepClone(result);
-                this.filter(referenceResult, 0, false);
-                Object evaluatedResult = CLONER.deepClone(result);
-                this.filter(evaluatedResult, 0, true);
-                Recording recording = new Recording(this.originalInstance,
-                                                    method,
-                                                    referenceArguments,
-                                                    referenceResult,
-                                                    evaluatedArguments,
-                                                    evaluatedResult);
-                Recording.QUEUE.add(recording);
-            }
+            Recording recording = new Recording(this.originalInstance, method,
+                                                cloneArguments(arguments, false),
+                                                cloneResult(result, false),
+                                                cloneArguments(arguments, true),
+                                                cloneResult(result, true));
+            Record.INSTANCE.submit(recording, this);
         } catch(Throwable t) {
             String message = "While intercepting recorded invocation. Method=%s, Args=%d, Object=%s.";
             String className = this.originalInstance.getClass().getSimpleName();

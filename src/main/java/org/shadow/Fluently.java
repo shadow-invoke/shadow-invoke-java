@@ -4,9 +4,9 @@ import org.shadow.field.Filter;
 import org.shadow.field.Noise;
 import org.shadow.field.Secret;
 import org.shadow.invocation.Recorder;
-import org.shadow.schedule.Percentage;
-import org.shadow.schedule.Rate;
-import org.shadow.schedule.Throttle;
+import org.shadow.throttling.Percentage;
+import org.shadow.throttling.Rate;
+import org.shadow.throttling.Throttle;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Field;

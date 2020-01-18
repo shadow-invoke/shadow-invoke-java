@@ -1,4 +1,4 @@
-package org.shadow.schedule;
+package org.shadow.throttling;
 
 import java.util.Random;
 
@@ -17,7 +17,7 @@ public class Percentage implements Throttle {
     }
 
     @Override
-    public boolean accept() {
-        return this.random.nextDouble() > this.percentage;
+    public boolean reject() {
+        return this.random.nextDouble() < this.percentage;
     }
 }

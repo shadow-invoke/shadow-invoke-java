@@ -1,31 +1,70 @@
 package org.shadow.invocation;
 
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.QueueUtils;
 import org.apache.commons.collections4.queue.CircularFifoQueue;
+import org.shadow.invocation.transmission.TransmissionException;
 import org.shadow.invocation.transmission.Transmitter;
-import org.shadow.schedule.Throttle;
 
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Queue;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
+
+import static java.lang.Runtime.getRuntime;
 
 /**
  * The record of recordings recorded by recorders. Say that fast three times.
  */
+@Slf4j
 public enum Record {
     INSTANCE;
 
+    private final ExecutorService THREAD_POOL = Executors.newFixedThreadPool(getRuntime().availableProcessors()); // TODO: Make configurable
+    private final ScheduledExecutorService SCHEDULER = Executors.newSingleThreadScheduledExecutor();
+    private static final int MAX_QUEUE_SIZE = 1024; // TODO: Make configurable
     // TODO: Make the size configurable using something like cache(max(1024)) or caching(ttl(1, HOUR))
     private final Queue<Recording> QUEUE = QueueUtils.synchronizedQueue(new CircularFifoQueue<>(1024));
-    private final Map<String, Throttle> invocationKeyToThrottle = new HashMap<>();
     private final Map<String, Transmitter> invocationKeyToTransmitter = new HashMap<>();
-    // TODO: Use combination of ScheduledExecutorService and plain ExecutorService to periodically
-    //       fire off a batch of transmissions, timing them out after some interval.
+    private final Map<String, Queue<Recording>> invocationKeyToPendingQueue = new HashMap<>();
+
+    Record() {
+        SCHEDULER.scheduleAtFixedRate(this::transmitPending, 0L, 5L, TimeUnit.SECONDS); // TODO: Make configurable
+    }
+
+    private void transmitPending() {
+        for(String key : this.invocationKeyToPendingQueue.keySet()) {
+            Queue<Recording> pending = this.invocationKeyToPendingQueue.get(key);
+            Transmitter transmitter = this.invocationKeyToTransmitter.get(key);
+            if(transmitter != null) {
+                try {
+                    transmitter.transmit(pending.stream().collect(Collectors.toList()));
+                } catch (TransmissionException e) {
+                    log.warn(String.format("While transmitting for key %s: ", key), e);
+                }
+            }
+            pending.clear();
+        }
+    }
 
     protected void submit(Recording recording, Recorder recorder) {
-        String invocationKey = recording.getInvocationKey();
-        invocationKeyToThrottle.putIfAbsent(invocationKey, recorder.getThrottle());
-        invocationKeyToTransmitter.putIfAbsent(invocationKey, recorder.getTransmitter());
-        QUEUE.offer(recording);
+        if(recorder == null || recording == null) {
+            log.warn("Null recorder or recording passed to submit");
+            return;
+        }
+        if(recorder.getThrottle() == null || !recorder.getThrottle().reject()) {
+            String invocationKey = recording.getInvocationKey();
+            invocationKeyToTransmitter.putIfAbsent(invocationKey, recorder.getTransmitter());
+            invocationKeyToPendingQueue.putIfAbsent(invocationKey, createQueue());
+            invocationKeyToPendingQueue.get(invocationKey).offer(recording);
+        }
+    }
+
+    private static Queue<Recording> createQueue() {
+        return QueueUtils.synchronizedQueue(new CircularFifoQueue<>(MAX_QUEUE_SIZE));
     }
 }

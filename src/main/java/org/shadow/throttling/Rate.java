@@ -1,4 +1,4 @@
-package org.shadow.schedule;
+package org.shadow.throttling;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -26,10 +26,10 @@ public class Rate implements Throttle {
     }
 
     @Override
-    public boolean accept() {
+    public boolean reject() {
         if(this.timeUnit == null) {
-            log.warn("No time unit or duration was set for this rate schedule. Never accepting");
-            return false;
+            log.warn("No time unit or duration was set for this rate throttling. Never accepting");
+            return true;
         }
         long endEpochMillis = this.startEpochMillis + this.timeUnit.toMillis(this.timeDuration);
         if(Instant.now().toEpochMilli() > endEpochMillis) {
@@ -40,11 +40,11 @@ public class Rate implements Throttle {
             //       might use a buffer of time-stamped transcripts and a timer.
             this.startEpochMillis = endEpochMillis;
             this.acceptedThisInterval = 1;
-            return true;
+            return false;
         } else if(this.acceptedThisInterval < this.acceptsPerDuration) {
             this.acceptedThisInterval++;
-            return true;
+            return false;
         }
-        return false;
+        return true;
     }
 }
