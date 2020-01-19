@@ -25,6 +25,7 @@ public class Recorder implements MethodInterceptor {
     @Getter private Throttle throttle = null;
     @Getter private Transmitter transmitter = null;
     private int objectDepth = 10;
+    private String namespace = null;
 
     public Recorder(Object originalInstance) {
         this.originalInstance = originalInstance;
@@ -32,6 +33,11 @@ public class Recorder implements MethodInterceptor {
 
     public Recorder filteringOut(Filter.Builder... filters) {
         this.filters = Arrays.stream(filters).map(Filter.Builder::build).toArray(Filter[]::new);
+        return this;
+    }
+
+    public Recorder inNamespace(String namespace) {
+        this.namespace = namespace;
         return this;
     }
 
@@ -79,7 +85,7 @@ public class Recorder implements MethodInterceptor {
     public Object intercept(Object o, Method method, Object[] arguments, MethodProxy proxy) throws Throwable {
         Object result = method.invoke(this.originalInstance, arguments);
         try {
-            Recording recording = new Recording(this.originalInstance, method,
+            Recording recording = new Recording(this.originalInstance, this.namespace, method,
                                                 cloneArguments(arguments, false),
                                                 cloneResult(result, false),
                                                 cloneArguments(arguments, true),
