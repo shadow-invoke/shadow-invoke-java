@@ -23,6 +23,7 @@ import static org.shadow.Fluently.*;
 
 @Slf4j
 public class RecorderTest {
+    private static final String INVOCATION_KEY = ".org.shadow.Bar.doSomethingShadowed";
     @Rule public TestName testName = new TestName();
     private static final Bar bar = new Bar();
     private static final Baz baz = new Baz(
@@ -56,7 +57,7 @@ public class RecorderTest {
                         .inNamespace(testName.getMethodName())
                         .proxyingAs(Bar.class);
         assertEquals(result, proxy.doSomethingShadowed(foo));
-        Record.INSTANCE.transmitPending(testName.getMethodName() + ".org.shadow.Bar.doSomethingShadowed");
+        Record.INSTANCE.transmitPending(testName.getMethodName() + INVOCATION_KEY);
         Recording recording = future.get(1L, TimeUnit.SECONDS);
 
         assertNotNull(recording.getReferenceArguments());
@@ -111,7 +112,7 @@ public class RecorderTest {
                 .inNamespace(testName.getMethodName())
                 .proxyingAs(Bar.class);
         assertEquals(result, proxy.doSomethingShadowed(foo));
-        Record.INSTANCE.transmitPending(testName.getMethodName() + ".org.shadow.Bar.doSomethingShadowed");
+        Record.INSTANCE.transmitPending(testName.getMethodName() + INVOCATION_KEY);
         Recording recording = future.get(1L, TimeUnit.SECONDS);
 
         assertNotNull(recording.getReferenceArguments());
@@ -168,7 +169,7 @@ public class RecorderTest {
         for(int i=0; i<100; ++i) {
             assertEquals(result, proxy.doSomethingShadowed(foo));
         }
-        Record.INSTANCE.transmitPending(testName.getMethodName() + ".org.shadow.Bar.doSomethingShadowed");
+        Record.INSTANCE.transmitPending(testName.getMethodName() + INVOCATION_KEY);
         Collection<Recording> recordings = future.get(1L, TimeUnit.SECONDS);
         // TODO: This test is going to be flaky; how to fix?
         assertTrue(recordings.size() > 25 && recordings.size() < 75);
@@ -206,7 +207,7 @@ public class RecorderTest {
                 e.printStackTrace();
             }
         }
-        Record.INSTANCE.transmitPending(testName.getMethodName() + ".org.shadow.Bar.doSomethingShadowed");
+        Record.INSTANCE.transmitPending(testName.getMethodName() + INVOCATION_KEY);
         Collection<Recording> recordings = future.get(1L, TimeUnit.SECONDS);
         assertEquals(recordings.size(), 4);
         log.info(testName.getMethodName() + " finishing.");

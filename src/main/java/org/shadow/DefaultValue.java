@@ -1,15 +1,7 @@
 package org.shadow;
 
-import java.lang.reflect.Field;
-import java.lang.reflect.Modifier;
-
 public class DefaultValue {
     private DefaultValue() {}
-
-    @Deprecated
-    public static boolean shouldRedactMembers(Field field) {
-        return (of(field.getType()) == null) && !Modifier.isStatic(field.getModifiers());
-    }
 
     public static Object of(Class<?> cls) {
         if(cls != null) {
