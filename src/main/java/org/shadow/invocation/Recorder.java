@@ -1,48 +1,50 @@
 package org.shadow.invocation;
 
-import com.rits.cloning.Cloner;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import net.sf.cglib.proxy.Enhancer;
 import net.sf.cglib.proxy.MethodInterceptor;
 import net.sf.cglib.proxy.MethodProxy;
-import org.shadow.DefaultValue;
-import org.shadow.ReflectiveAccess;
 import org.shadow.field.Filter;
 import org.shadow.invocation.transmission.Transmitter;
 import org.shadow.throttling.Throttle;
+import reactor.core.publisher.Flux;
+import reactor.core.publisher.FluxSink;
+import reactor.core.scheduler.Schedulers;
 
-import java.lang.reflect.Field;
 import java.lang.reflect.Method;
-import java.lang.reflect.Modifier;
 import java.util.Arrays;
+import java.util.HashSet;
+import java.util.Set;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.function.Consumer;
 
 @Slf4j
-public class Recorder implements MethodInterceptor {
-    private static final Cloner CLONER = new Cloner();
-    private final Object originalInstance;
+public class Recorder implements MethodInterceptor, Consumer<FluxSink<Recording>> {
+    private final ExecutorService THREAD_POOL = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
+    private final Set<FluxSink<Recording>> listeners = new HashSet<>();
+    private final Flux<Recording> flux;
     private Filter[] filters;
+    private FilteringCloner filteringCloner;
+    @Getter private final Object originalInstance;
     @Getter private Throttle throttle = null;
-    @Getter private Transmitter transmitter = null;
-    private int objectDepth = 10;
-    private String namespace = null;
+    @Getter private int objectDepth = 10;
 
     public Recorder(Object originalInstance) {
         this.originalInstance = originalInstance;
+        this.flux = Flux.create(this, FluxSink.OverflowStrategy.DROP);
     }
 
     public Recorder filteringOut(Filter.Builder... filters) {
         this.filters = Arrays.stream(filters).map(Filter.Builder::build).toArray(Filter[]::new);
-        return this;
-    }
-
-    public Recorder inNamespace(String namespace) {
-        this.namespace = namespace;
+        this.filteringCloner = new FilteringCloner(this.objectDepth, this.filters);
         return this;
     }
 
     public Recorder toDepth(int objectDepth) {
         this.objectDepth = objectDepth;
+        this.filteringCloner = new FilteringCloner(this.objectDepth, this.filters);
         return this;
     }
 
@@ -51,8 +53,14 @@ public class Recorder implements MethodInterceptor {
         return this;
     }
 
-    public Recorder sendingTo(Transmitter transmitter) {
-        this.transmitter = transmitter;
+    public Recorder sendingTo(Transmitter... transmitters) {
+        if(transmitters != null && transmitters.length > 0) {
+            for(int i=0;i<transmitters.length;i++) {
+                this.flux
+                        .subscribeOn(Schedulers.fromExecutor(THREAD_POOL))
+                        .subscribe(transmitters[i]);
+            };
+        }
         return this;
     }
 
@@ -66,31 +74,18 @@ public class Recorder implements MethodInterceptor {
         return (T)Enhancer.create(cls, this);
     }
 
-    private Object[] cloneArguments(Object[] arguments, boolean isEvaluated) {
-        Object[] copy = new Object[arguments.length];
-        for (int i = 0; i < arguments.length; ++i) {
-            copy[i] = CLONER.deepClone(arguments[i]);
-            this.filter(copy[i], 0, isEvaluated);
-        }
-        return copy;
-    }
-
-    private Object cloneResult(Object result, boolean isEvaluated) {
-        Object copy = CLONER.deepClone(result);
-        this.filter(copy, 0, false);
-        return copy;
-    }
-
     @Override
     public Object intercept(Object o, Method method, Object[] arguments, MethodProxy proxy) throws Throwable {
         Object result = method.invoke(this.originalInstance, arguments);
         try {
-            Recording recording = new Recording(this.originalInstance, this.namespace, method,
-                                                cloneArguments(arguments, false),
-                                                cloneResult(result, false),
-                                                cloneArguments(arguments, true),
-                                                cloneResult(result, true));
-            Record.INSTANCE.submit(recording, this);
+            Recording recording = new Recording(this.originalInstance, method,
+                                                this.filteringCloner.filterAsReferenceCopy(arguments),
+                                                this.filteringCloner.filterAsReferenceCopy(result),
+                                                this.filteringCloner.filterAsEvaluatedCopy(arguments),
+                                                this.filteringCloner.filterAsEvaluatedCopy(result));
+            if(this.getThrottle() == null || !this.getThrottle().reject()) {
+                this.listeners.forEach(l -> l.next(recording));
+            }
         } catch(Throwable t) {
             String message = "While intercepting recorded invocation. Method=%s, Args=%d, Object=%s.";
             String className = this.originalInstance.getClass().getSimpleName();
@@ -99,23 +94,8 @@ public class Recorder implements MethodInterceptor {
         return result;
     }
 
-    private void filter(Object obj, int level, boolean isEvaluated) {
-        if(obj == null) return;
-        Class<?> cls = obj.getClass();
-        for(Field field : cls.getDeclaredFields()) {
-            field.setAccessible(true);
-            for(Filter filter : this.filters) {
-                if(isEvaluated) {
-                    filter.filterAsEvaluatedCopy(obj, field);
-                } else {
-                    filter.filterAsReferenceCopy(obj, field);
-                }
-            }
-            boolean filterable = (DefaultValue.of(field.getType()) == null) && !Modifier.isStatic(field.getModifiers());
-            if(level < this.objectDepth && filterable) {
-                Object member = ReflectiveAccess.getMember(obj, field);
-                this.filter(member, level + 1, isEvaluated);
-            }
-        }
+    @Override
+    public void accept(FluxSink<Recording> listener) {
+        this.listeners.add(listener); // TODO: Support full subscription life-cycle, with removal of listeners?
     }
 }

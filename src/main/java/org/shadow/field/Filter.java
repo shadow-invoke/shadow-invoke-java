@@ -19,12 +19,14 @@ public class Filter {
     private final Function<Object, Object> generateReferenceMember;
     private final Class<?> target;
 
-    public void filterAsEvaluatedCopy(Object obj, Field fld) {
+    public Object filterAsEvaluatedCopy(Object obj, Field fld) {
         filterWith(obj, fld, this.generateEvaluatedMember);
+        return obj;
     }
 
-    public void filterAsReferenceCopy(Object obj, Field fld) {
+    public Object filterAsReferenceCopy(Object obj, Field fld) {
         filterWith(obj, fld, this.generateReferenceMember);
+        return obj;
     }
 
     private void filterWith(Object obj, Field fld, Function<Object, Object> action) {

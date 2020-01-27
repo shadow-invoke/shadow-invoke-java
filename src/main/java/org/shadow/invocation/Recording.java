@@ -16,15 +16,9 @@ public class Recording {
     private final Object[] evaluatedArguments;
     private final Object evaluatedResult;
 
-    public Recording(Object invocationTarget, String namespace, Method invokedMethod, Object[] referenceArguments,
-                     Object referenceResult,Object[] evaluatedArguments, Object evaluatedResult) {
-        if(namespace != null) {
-            this.invocationKey = namespace + "." +
-                                 invocationTarget.getClass().getCanonicalName() + "." +
-                                 invokedMethod.getName();
-        } else {
-            this.invocationKey = invocationTarget.getClass().getCanonicalName() + "." + invokedMethod.getName();
-        }
+    public Recording(Object invocationTarget, Method invokedMethod, Object[] referenceArguments,
+                     Object referenceResult, Object[] evaluatedArguments, Object evaluatedResult) {
+        this.invocationKey = invocationTarget.getClass().getCanonicalName() + "." + invokedMethod.getName();
         this.referenceArguments = referenceArguments;
         this.referenceResult = referenceResult;
         this.evaluatedArguments = evaluatedArguments;

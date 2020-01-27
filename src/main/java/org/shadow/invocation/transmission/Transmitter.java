@@ -1,5 +1,6 @@
 package org.shadow.invocation.transmission;
 
+import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.reactivestreams.Subscriber;
 import org.reactivestreams.Subscription;
@@ -18,14 +19,14 @@ public abstract class Transmitter implements Subscriber<Recording> {
     private static final ExecutorService THREAD_POOL = Executors.newFixedThreadPool(NUM_CORES);
     private List<Recording> pending = new ArrayList<>(DEFAULT_BATCH_SIZE);
     private Subscription subscription = null;
-    private int batchSize = DEFAULT_BATCH_SIZE;
+    @Getter private int batchSize = DEFAULT_BATCH_SIZE;
 
     public abstract void transmit(Collection<Recording> recordings) throws TransmissionException;
 
     private void sendPending(int threshold) {
         if(this.pending.size() > threshold) {
             try {
-                this.transmit(this.pending);
+                this.transmit(new ArrayList<>(this.pending)); // send a copy since we clear the source
             } catch (TransmissionException e) {
                 this.onError(e);
                 log.error(String.format("Failed to transmit %s", this.pending));
@@ -40,7 +41,7 @@ public abstract class Transmitter implements Subscriber<Recording> {
 
     public Transmitter withBatchSize(int size) {
         this.batchSize = size;
-        sendPending(0);
+        sendPending(0); // send now
         this.pending = new ArrayList<>(size);
         return this;
     }
@@ -48,12 +49,13 @@ public abstract class Transmitter implements Subscriber<Recording> {
     @Override
     public void onSubscribe(Subscription subscription) {
         this.subscription = subscription;
-        sendPending(0);
+        sendPending(0); // send now
     }
 
     @Override
     public void onNext(Recording recording) {
-        this.sendPending(this.batchSize);
+        this.pending.add(recording);
+        this.sendPending(this.batchSize - 1);
     }
 
     @Override
