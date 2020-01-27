@@ -55,7 +55,7 @@ public class RecorderTest {
                         }.withBatchSize(1))
                         .proxyingAs(Bar.class);
         assertEquals(result, proxy.doSomethingShadowed(foo));
-        Recording recording = future.get(1L, TimeUnit.SECONDS);
+        Recording recording = future.get(3L, TimeUnit.SECONDS);
 
         assertNotNull(recording.getReferenceArguments());
         assertTrue(recording.getReferenceArguments().length > 0);
@@ -108,7 +108,7 @@ public class RecorderTest {
                 }.withBatchSize(1))
                 .proxyingAs(Bar.class);
         assertEquals(result, proxy.doSomethingShadowed(foo));
-        Recording recording = future.get(1L, TimeUnit.SECONDS);
+        Recording recording = future.get(3L, TimeUnit.SECONDS);
 
         assertNotNull(recording.getReferenceArguments());
         assertTrue(recording.getReferenceArguments().length > 0);
@@ -163,7 +163,7 @@ public class RecorderTest {
         for(int i=0; i<100; ++i) {
             assertEquals(result, proxy.doSomethingShadowed(foo));
         }
-        Collection<Recording> recordings = future.get(1L, TimeUnit.SECONDS);
+        Collection<Recording> recordings = future.get(3L, TimeUnit.SECONDS);
         // TODO: This test is going to be flaky; how to fix?
         assertTrue(recordings.size() > 25 && recordings.size() < 75);
         log.info(testName.getMethodName() + " finishing.");
