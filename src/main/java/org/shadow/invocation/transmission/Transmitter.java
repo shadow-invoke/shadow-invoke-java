@@ -21,15 +21,15 @@ public abstract class Transmitter implements Subscriber<Recording> {
     private Subscription subscription = null;
     @Getter private int batchSize = DEFAULT_BATCH_SIZE;
 
-    public abstract void transmit(Collection<Recording> recordings) throws TransmissionException;
+    public abstract void transmit(Collection<Recording> recordings);
 
     private void sendPending(int threshold) {
         if(this.pending.size() > threshold) {
             try {
                 this.transmit(new ArrayList<>(this.pending)); // send a copy since we clear the source
-            } catch (TransmissionException e) {
-                this.onError(e);
-                log.error(String.format("Failed to transmit %s", this.pending));
+            } catch (Throwable t) {
+                this.onError(t);
+                log.error(String.format("Failed to transmit %s", this.pending), t);
             } finally {
                 this.pending.clear();
             }

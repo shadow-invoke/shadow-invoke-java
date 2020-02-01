@@ -55,11 +55,11 @@ public class Recorder implements MethodInterceptor, Consumer<FluxSink<Recording>
 
     public Recorder sendingTo(Transmitter... transmitters) {
         if(transmitters != null && transmitters.length > 0) {
-            for(int i=0;i<transmitters.length;i++) {
+            for (Transmitter transmitter : transmitters) {
                 this.flux
                         .subscribeOn(Schedulers.fromExecutor(THREAD_POOL))
-                        .subscribe(transmitters[i]);
-            };
+                        .subscribe(transmitter);
+            }
         }
         return this;
     }

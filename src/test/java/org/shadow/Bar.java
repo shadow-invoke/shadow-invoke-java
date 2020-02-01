@@ -5,7 +5,4 @@ public class Bar {
         return f.getFirstName() + " " + f.getLastName();
     }
 
-    public String doSomethingNotShadowed(Foo f) {
-        return Integer.toString(f.getAge());
-    }
 }

@@ -6,7 +6,7 @@ public class DefaultValue {
     public static Object of(Class<?> cls) {
         if(cls != null) {
             if(isInteger(cls)) {
-                return (int)-1;
+                return -1;
             } else if(isShort(cls)) {
                 return (short)-1;
             } else if(isDouble(cls)) {

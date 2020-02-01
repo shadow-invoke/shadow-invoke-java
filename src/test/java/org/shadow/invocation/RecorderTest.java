@@ -8,10 +8,10 @@ import org.junit.rules.TestName;
 import org.shadow.*;
 import org.shadow.field.Noise;
 import org.shadow.field.Secret;
-import org.shadow.invocation.transmission.TransmissionException;
 import org.shadow.invocation.transmission.Transmitter;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
@@ -23,7 +23,7 @@ import static org.shadow.Fluently.*;
 
 @Slf4j
 public class RecorderTest {
-    @Rule public TestName testName = new TestName();
+    @Rule public final TestName testName = new TestName();
     private static final Bar bar = new Bar();
     private static final Baz baz = new Baz(
             "Pawn", 75000.00D, 69.5F, 1234L,
@@ -45,7 +45,7 @@ public class RecorderTest {
                         )
                         .sendingTo(new Transmitter() {
                             @Override
-                            public void transmit(Collection<Recording> recordings) throws TransmissionException {
+                            public void transmit(Collection<Recording> recordings) {
                                 assertEquals(recordings.size(), 1);
                                 Recording recording = recordings.iterator().next();
                                 assertNotNull(recording);
@@ -55,7 +55,7 @@ public class RecorderTest {
                         }.withBatchSize(1))
                         .proxyingAs(Bar.class);
         assertEquals(result, proxy.doSomethingShadowed(foo));
-        Recording recording = future.get(3L, TimeUnit.SECONDS);
+        Recording recording = future.get(1L, TimeUnit.SECONDS);
 
         assertNotNull(recording.getReferenceArguments());
         assertTrue(recording.getReferenceArguments().length > 0);
@@ -98,7 +98,7 @@ public class RecorderTest {
                 )
                 .sendingTo(new Transmitter() {
                     @Override
-                    public void transmit(Collection<Recording> recordings) throws TransmissionException {
+                    public void transmit(Collection<Recording> recordings) {
                         assertEquals(recordings.size(), 1);
                         Recording recording = recordings.iterator().next();
                         assertNotNull(recording);
@@ -108,7 +108,7 @@ public class RecorderTest {
                 }.withBatchSize(1))
                 .proxyingAs(Bar.class);
         assertEquals(result, proxy.doSomethingShadowed(foo));
-        Recording recording = future.get(3L, TimeUnit.SECONDS);
+        Recording recording = future.get(1L, TimeUnit.SECONDS);
 
         assertNotNull(recording.getReferenceArguments());
         assertTrue(recording.getReferenceArguments().length > 0);
@@ -139,9 +139,9 @@ public class RecorderTest {
     }
 
     @Test
-    public void testPercentThrottling() throws InterruptedException, TimeoutException, ExecutionException {
+    public void testPercentThrottling() {
         log.info(testName.getMethodName() + " starting.");
-        CompletableFuture<Collection<Recording>> future = new CompletableFuture<>();
+        final Collection<Recording> all = new ArrayList<>();
         Bar proxy = record(bar)
                 .filteringOut(
                         noise().from(Foo.class),
@@ -154,18 +154,20 @@ public class RecorderTest {
                 )
                 .sendingTo(new Transmitter() {
                     @Override
-                    public void transmit(Collection<Recording> recordings) throws TransmissionException {
-                        log.info(testName.getMethodName() + ": got batch of size " + recordings.size());
-                        future.complete(recordings);
+                    public void transmit(Collection<Recording> recordings) {
+                        all.addAll(recordings);
                     }
-                }.withBatchSize(26))
+                }.withBatchSize(1))
                 .proxyingAs(Bar.class);
         for(int i=0; i<100; ++i) {
             assertEquals(result, proxy.doSomethingShadowed(foo));
         }
-        Collection<Recording> recordings = future.get(3L, TimeUnit.SECONDS);
+        try {
+            Thread.sleep(500L);
+        } catch(InterruptedException e) { }
+        log.info(testName.getMethodName() + ": got " + all.size() + " total recordings.");
         // TODO: This test is going to be flaky; how to fix?
-        assertTrue(recordings.size() > 25 && recordings.size() < 75);
+        assertTrue(all.size() > 25 && all.size() < 75);
         log.info(testName.getMethodName() + " finishing.");
     }
 
@@ -185,7 +187,7 @@ public class RecorderTest {
                 )
                 .sendingTo(new Transmitter() {
                     @Override
-                    public void transmit(Collection<Recording> recordings) throws TransmissionException {
+                    public void transmit(Collection<Recording> recordings) {
                         log.info(testName.getMethodName() + ": got batch of size " + recordings.size());
                         future.complete(recordings);
                     }

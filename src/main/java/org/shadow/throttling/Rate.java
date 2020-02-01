@@ -9,7 +9,7 @@ import java.util.concurrent.TimeUnit;
 public class Rate implements Throttle {
     private TimeUnit timeUnit;
     private long timeDuration;
-    private int acceptsPerDuration;
+    private final int acceptsPerDuration;
     private int acceptedThisInterval;
     private long startEpochMillis;
 

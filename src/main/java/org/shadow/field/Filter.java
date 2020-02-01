@@ -43,8 +43,8 @@ public class Filter {
 
     public static class Builder {
         private Predicate<Field> selector;
-        private Function<Object, Object> generateEvaluatedMember;
-        private Function<Object, Object> generateReferenceMember;
+        private final Function<Object, Object> generateEvaluatedMember;
+        private final Function<Object, Object> generateReferenceMember;
         private Class<?> target;
 
         public Builder(Function<Object, Object> generateEvaluated, Function<Object, Object> generateReference) {
