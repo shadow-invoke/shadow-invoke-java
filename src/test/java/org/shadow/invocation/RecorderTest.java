@@ -1,10 +1,12 @@
 package org.shadow.invocation;
 
+import com.github.havarunner.HavaRunner;
 import com.google.common.collect.ImmutableMap;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TestName;
+import org.junit.runner.RunWith;
 import org.shadow.*;
 import org.shadow.field.Noise;
 import org.shadow.field.Secret;
@@ -13,6 +15,7 @@ import org.shadow.invocation.transmission.Transmitter;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
@@ -22,8 +25,8 @@ import static org.junit.Assert.*;
 import static org.shadow.Fluently.*;
 
 @Slf4j
+@RunWith(HavaRunner.class)
 public class RecorderTest {
-    @Rule public final TestName testName = new TestName();
     private static final Bar bar = new Bar();
     private static final Baz baz = new Baz(
             "Pawn", 75000.00D, 69.5F, 1234L,
@@ -34,7 +37,8 @@ public class RecorderTest {
 
     @Test
     public void testRecordNoiseSecretsNamed() throws InterruptedException, TimeoutException, ExecutionException {
-        log.info(testName.getMethodName() + " starting.");
+        String name = new Object(){}.getClass().getEnclosingMethod().getName();
+        log.info(name + " starting.");
         CompletableFuture<Recording> future = new CompletableFuture<>();
         Bar proxy = record(bar)
                         .filteringOut(
@@ -45,17 +49,17 @@ public class RecorderTest {
                         )
                         .sendingTo(new Transmitter() {
                             @Override
-                            public void transmit(Collection<Recording> recordings) {
+                            public void transmit(List<Recording> recordings) {
                                 assertEquals(recordings.size(), 1);
                                 Recording recording = recordings.iterator().next();
                                 assertNotNull(recording);
-                                log.info(testName.getMethodName() + ": got recording " + recording.toString());
+                                log.info(name + ": got recording " + recording.toString());
                                 future.complete(recording);
                             }
-                        }.withBatchSize(1))
+                        })
                         .proxyingAs(Bar.class);
         assertEquals(result, proxy.doSomethingShadowed(foo));
-        Recording recording = future.get(1L, TimeUnit.SECONDS);
+        Recording recording = future.get(500L, TimeUnit.MILLISECONDS);
 
         assertNotNull(recording.getReferenceArguments());
         assertTrue(recording.getReferenceArguments().length > 0);
@@ -82,12 +86,13 @@ public class RecorderTest {
         assertEquals(evaluatedFoo.getBaz().getHeight(), foo.getBaz().getHeight());
         assertEquals(evaluatedFoo.getBaz().getId(), DefaultValue.of(Long.class));
         assertEquals(recording.getEvaluatedResult(), result);
-        log.info(testName.getMethodName() + " finishing.");
+        log.info(name + " finishing.");
     }
 
     @Test
     public void testRecordNoiseSecretsAnnotated() throws InterruptedException, TimeoutException, ExecutionException {
-        log.info(testName.getMethodName() + " starting.");
+        String name = new Object(){}.getClass().getEnclosingMethod().getName();
+        log.info(name + " starting.");
         CompletableFuture<Recording> future = new CompletableFuture<>();
         Bar proxy = record(bar)
                 .filteringOut(
@@ -98,17 +103,17 @@ public class RecorderTest {
                 )
                 .sendingTo(new Transmitter() {
                     @Override
-                    public void transmit(Collection<Recording> recordings) {
+                    public void transmit(List<Recording> recordings) {
                         assertEquals(recordings.size(), 1);
                         Recording recording = recordings.iterator().next();
                         assertNotNull(recording);
-                        log.info(testName.getMethodName() + ": got recording " + recording.toString());
+                        log.info(name + ": got recording " + recording.toString());
                         future.complete(recording);
                     }
-                }.withBatchSize(1))
+                })
                 .proxyingAs(Bar.class);
         assertEquals(result, proxy.doSomethingShadowed(foo));
-        Recording recording = future.get(1L, TimeUnit.SECONDS);
+        Recording recording = future.get(500L, TimeUnit.MILLISECONDS);
 
         assertNotNull(recording.getReferenceArguments());
         assertTrue(recording.getReferenceArguments().length > 0);
@@ -135,12 +140,13 @@ public class RecorderTest {
         assertEquals(evaluatedFoo.getBaz().getHeight(), (float)DefaultValue.of(Float.class), 0.001D);
         assertEquals(evaluatedFoo.getBaz().getId(), DefaultValue.of(Long.class));
         assertEquals(recording.getEvaluatedResult(), result);
-        log.info(testName.getMethodName() + " finishing.");
+        log.info(name + " finishing.");
     }
 
     @Test
-    public void testPercentThrottling() {
-        log.info(testName.getMethodName() + " starting.");
+    public void testZeroPercentThrottling() {
+        String name = new Object(){}.getClass().getEnclosingMethod().getName();
+        log.info(name + " starting.");
         final Collection<Recording> all = new ArrayList<>();
         Bar proxy = record(bar)
                 .filteringOut(
@@ -150,31 +156,66 @@ public class RecorderTest {
                         secrets().from(Baz.class)
                 )
                 .throttlingTo(
-                        percent(0.5)
+                        percent(1.0)
                 )
                 .sendingTo(new Transmitter() {
                     @Override
-                    public void transmit(Collection<Recording> recordings) {
+                    public void transmit(List<Recording> recordings) {
+                        log.info(name + ": got batch of size " + recordings.size());
                         all.addAll(recordings);
                     }
-                }.withBatchSize(1))
+                }.withBatchSize(20))
                 .proxyingAs(Bar.class);
         for(int i=0; i<100; ++i) {
             assertEquals(result, proxy.doSomethingShadowed(foo));
         }
         try {
             Thread.sleep(500L);
-        } catch(InterruptedException e) { }
-        log.info(testName.getMethodName() + ": got " + all.size() + " total recordings.");
-        // TODO: This test is going to be flaky; how to fix?
-        assertTrue(all.size() > 25 && all.size() < 75);
-        log.info(testName.getMethodName() + " finishing.");
+        } catch(InterruptedException ignored) { }
+        log.info(name + ": got " + all.size() + " total recordings.");
+        assertEquals(100, all.size());
+        log.info(name + " finishing.");
+    }
+
+    @Test
+    public void testOneHundredPercentThrottling() {
+        String name = new Object(){}.getClass().getEnclosingMethod().getName();
+        log.info(name + " starting.");
+        final Collection<Recording> all = new ArrayList<>();
+        Bar proxy = record(bar)
+                .filteringOut(
+                        noise().from(Foo.class),
+                        secrets().from(Foo.class),
+                        noise().from(Baz.class),
+                        secrets().from(Baz.class)
+                )
+                .throttlingTo(
+                        percent(0.0)
+                )
+                .sendingTo(new Transmitter() {
+                    @Override
+                    public void transmit(List<Recording> recordings) {
+                        log.info(name + ": got batch of size " + recordings.size());
+                        all.addAll(recordings);
+                    }
+                })
+                .proxyingAs(Bar.class);
+        for(int i=0; i<100; ++i) {
+            assertEquals(result, proxy.doSomethingShadowed(foo));
+        }
+        try {
+            Thread.sleep(500L);
+        } catch(InterruptedException ignored) { }
+        log.info(name + ": got " + all.size() + " total recordings.");
+        assertEquals(0, all.size());
+        log.info(name + " finishing.");
     }
 
     @Test
     public void testRateThrottling() throws InterruptedException, ExecutionException, TimeoutException {
-        log.info(testName.getMethodName() + " starting.");
-        CompletableFuture<Collection<Recording>> future = new CompletableFuture<>();
+        String name = new Object(){}.getClass().getEnclosingMethod().getName();
+        log.info(name + " starting.");
+        final Collection<Recording> all = new ArrayList<>();
         Bar proxy = record(bar)
                 .filteringOut(
                         noise().from(Foo.class),
@@ -187,9 +228,9 @@ public class RecorderTest {
                 )
                 .sendingTo(new Transmitter() {
                     @Override
-                    public void transmit(Collection<Recording> recordings) {
-                        log.info(testName.getMethodName() + ": got batch of size " + recordings.size());
-                        future.complete(recordings);
+                    public void transmit(List<Recording> recordings) {
+                        log.info(name + ": got batch of size " + recordings.size());
+                        all.addAll(recordings);
                     }
                 }.withBatchSize(4))
                 .proxyingAs(Bar.class);
@@ -197,12 +238,13 @@ public class RecorderTest {
             assertEquals(result, proxy.doSomethingShadowed(foo));
             try {
                 Thread.sleep(250L);
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
+            } catch (InterruptedException ignored) { }
         }
-        Collection<Recording> recordings = future.get(3L, TimeUnit.SECONDS);
-        assertEquals(recordings.size(), 4);
-        log.info(testName.getMethodName() + " finishing.");
+        try {
+            Thread.sleep(500L);
+        } catch(InterruptedException ignored) { }
+        log.info(name + ": got " + all.size() + " total recordings.");
+        assertEquals(4, all.size());
+        log.info(name + " finishing.");
     }
 }

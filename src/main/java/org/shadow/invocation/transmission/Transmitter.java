@@ -6,56 +6,35 @@ import org.reactivestreams.Subscriber;
 import org.reactivestreams.Subscription;
 import org.shadow.invocation.Recording;
 
-import java.util.ArrayList;
-import java.util.Collection;
 import java.util.List;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 
 @Slf4j
-public abstract class Transmitter implements Subscriber<Recording> {
-    public static final int DEFAULT_BATCH_SIZE = 10;
-    private static final int NUM_CORES = Runtime.getRuntime().availableProcessors();
-    private static final ExecutorService THREAD_POOL = Executors.newFixedThreadPool(NUM_CORES);
-    private List<Recording> pending = new ArrayList<>(DEFAULT_BATCH_SIZE);
+public abstract class Transmitter implements Subscriber<List<Recording>> {
     private Subscription subscription = null;
-    @Getter private int batchSize = DEFAULT_BATCH_SIZE;
+    @Getter private int batchSize = 1;
 
-    public abstract void transmit(Collection<Recording> recordings);
-
-    private void sendPending(int threshold) {
-        if(this.pending.size() > threshold) {
-            try {
-                this.transmit(new ArrayList<>(this.pending)); // send a copy since we clear the source
-            } catch (Throwable t) {
-                this.onError(t);
-                log.error(String.format("Failed to transmit %s", this.pending), t);
-            } finally {
-                this.pending.clear();
-            }
-        }
-        if(this.subscription != null) {
-            this.subscription.request(1L);
-        }
-    }
+    public abstract void transmit(List<Recording> recordings);
 
     public Transmitter withBatchSize(int size) {
         this.batchSize = size;
-        sendPending(0); // send now
-        this.pending = new ArrayList<>(size);
+        if(this.batchSize < 1) {
+            String fmt = "Transmitter got bad batch size %d. Setting to 1.";
+            log.warn(String.format(fmt, this.batchSize));
+            this.batchSize = 1;
+        }
         return this;
     }
 
     @Override
     public void onSubscribe(Subscription subscription) {
         this.subscription = subscription;
-        sendPending(0); // send now
+        this.subscription.request(this.batchSize);
     }
 
     @Override
-    public void onNext(Recording recording) {
-        this.pending.add(recording);
-        this.sendPending(this.batchSize - 1);
+    public void onNext(List<Recording> recordings) {
+        this.transmit(recordings);
+        this.subscription.request(this.batchSize + 1);
     }
 
     @Override
@@ -66,6 +45,5 @@ public abstract class Transmitter implements Subscriber<Recording> {
     @Override
     public void onComplete() {
         this.subscription = null;
-        sendPending(0);
     }
 }

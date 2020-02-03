@@ -18,6 +18,6 @@ public class Percentage implements Throttle {
 
     @Override
     public boolean reject() {
-        return this.random.nextDouble() < this.percentage;
+        return this.random.nextDouble() >= this.percentage;
     }
 }

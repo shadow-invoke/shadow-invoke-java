@@ -11,25 +11,20 @@ import org.shadow.throttling.Throttle;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.FluxSink;
 import reactor.core.scheduler.Schedulers;
-
 import java.lang.reflect.Method;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import java.util.function.Consumer;
 
 @Slf4j
 public class Recorder implements MethodInterceptor, Consumer<FluxSink<Recording>> {
-    private final ExecutorService THREAD_POOL = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
     private final Set<FluxSink<Recording>> listeners = new HashSet<>();
-    private final Flux<Recording> flux;
+    private Flux<Recording> flux;
     private Filter[] filters;
     private FilteringCloner filteringCloner;
     @Getter private final Object originalInstance;
     @Getter private Throttle throttle = null;
-    @Getter private int objectDepth = 10;
 
     public Recorder(Object originalInstance) {
         this.originalInstance = originalInstance;
@@ -38,13 +33,12 @@ public class Recorder implements MethodInterceptor, Consumer<FluxSink<Recording>
 
     public Recorder filteringOut(Filter.Builder... filters) {
         this.filters = Arrays.stream(filters).map(Filter.Builder::build).toArray(Filter[]::new);
-        this.filteringCloner = new FilteringCloner(this.objectDepth, this.filters);
+        this.filteringCloner = new FilteringCloner(10, this.filters);
         return this;
     }
 
     public Recorder toDepth(int objectDepth) {
-        this.objectDepth = objectDepth;
-        this.filteringCloner = new FilteringCloner(this.objectDepth, this.filters);
+        this.filteringCloner = new FilteringCloner(objectDepth, this.filters);
         return this;
     }
 
@@ -57,7 +51,8 @@ public class Recorder implements MethodInterceptor, Consumer<FluxSink<Recording>
         if(transmitters != null && transmitters.length > 0) {
             for (Transmitter transmitter : transmitters) {
                 this.flux
-                        .subscribeOn(Schedulers.fromExecutor(THREAD_POOL))
+                        .subscribeOn(Schedulers.elastic())
+                        .buffer(transmitter.getBatchSize())
                         .subscribe(transmitter);
             }
         }
