@@ -1,10 +1,9 @@
 package org.shadow.throttling;
 
-import java.util.Random;
+import java.util.concurrent.ThreadLocalRandom;
 
 public class Percentage implements Throttle {
     private final double percentage;
-    private final Random random = new Random();
 
     public Percentage(double percentage) {
         if(percentage <= 1.0D && percentage >= 0.0D) {
@@ -18,6 +17,6 @@ public class Percentage implements Throttle {
 
     @Override
     public boolean reject() {
-        return this.random.nextDouble() < this.percentage;
+        return ThreadLocalRandom.current().nextDouble() >= this.percentage;
     }
 }
