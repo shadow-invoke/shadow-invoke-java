@@ -1,9 +1,8 @@
-package org.shadow.invocation;
+package org.shadow.field;
 
 import com.rits.cloning.Cloner;
 import org.shadow.DefaultValue;
 import org.shadow.ReflectiveAccess;
-import org.shadow.field.Filter;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;

@@ -7,5 +7,5 @@ import java.lang.annotation.Target;
 
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.TYPE)
-public @interface Recorded {
+public @interface Recorded { // TODO: how to find all annotated before shadowing?
 }
