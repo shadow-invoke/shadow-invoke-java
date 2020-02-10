@@ -1,8 +1,8 @@
 package org.shadow.invocation;
 
 import com.github.havarunner.HavaRunner;
-import com.google.common.collect.ImmutableMap;
 import lombok.extern.slf4j.Slf4j;
+import net.jodah.concurrentunit.Waiter;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.shadow.*;
@@ -11,8 +11,7 @@ import org.shadow.field.Secret;
 import org.shadow.invocation.transmission.Transmitter;
 
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.Collection;
+import java.util.HashMap;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
@@ -26,12 +25,13 @@ import static org.shadow.Fluently.*;
 @RunWith(HavaRunner.class)
 public class RecorderTest {
     private static final Bar bar = new Bar();
-    private static final Baz baz = new Baz(
-            "Pawn", 75000.00D, 69.5F, 1234L,
-            ImmutableMap.of(TimeUnit.MINUTES, Task.Clerical, TimeUnit.HOURS, Task.Management)
-    );
+    private static final Baz baz = new Baz("Pawn", 75000.00D, 69.5F, 1234L, new HashMap<>());
     private static final Foo foo = new Foo("Bob", "Smith", 35, LocalDateTime.now(), baz);
     private static final String result = bar.doSomethingShadowed(foo);
+    static {
+        baz.getTaskTime().put(TimeUnit.MINUTES, Task.Clerical);
+        baz.getTaskTime().put(TimeUnit.HOURS, Task.Management);
+    }
 
     @Test
     public void testRecordNoiseSecretsNamed() throws InterruptedException, TimeoutException, ExecutionException {
@@ -142,10 +142,10 @@ public class RecorderTest {
     }
 
     @Test
-    public void testZeroPercentThrottling() {
+    public void testZeroPercentThrottling() throws TimeoutException, InterruptedException {
         String name = new Object(){}.getClass().getEnclosingMethod().getName();
         log.info(name + " starting.");
-        final Collection<Recording> all = new ArrayList<>();
+        final Waiter waiter = new Waiter();
         Bar proxy = record(bar)
                 .filteringOut(
                         noise().from(Foo.class),
@@ -160,26 +160,23 @@ public class RecorderTest {
                     @Override
                     public void transmit(List<Recording> recordings) {
                         log.info(name + ": got batch of size " + recordings.size());
-                        all.addAll(recordings);
+                        waiter.assertEquals(20, recordings.size());
+                        waiter.resume();
                     }
                 }.withBatchSize(20))
                 .proxyingAs(Bar.class);
         for(int i=0; i<100; ++i) {
             assertEquals(result, proxy.doSomethingShadowed(foo));
         }
-        try {
-            Thread.sleep(2000L);
-        } catch(InterruptedException ignored) { }
-        log.info(name + ": got " + all.size() + " total recordings.");
-        assertEquals(100, all.size());
+        waiter.await(5, TimeUnit.SECONDS, 5);
         log.info(name + " finishing.");
     }
 
-    @Test
-    public void testOneHundredPercentThrottling() {
+    @Test(expected = TimeoutException.class)
+    public void testOneHundredPercentThrottling() throws TimeoutException, InterruptedException {
         String name = new Object(){}.getClass().getEnclosingMethod().getName();
         log.info(name + " starting.");
-        final Collection<Recording> all = new ArrayList<>();
+        final Waiter waiter = new Waiter();
         Bar proxy = record(bar)
                 .filteringOut(
                         noise().from(Foo.class),
@@ -193,19 +190,15 @@ public class RecorderTest {
                 .sendingTo(new Transmitter() {
                     @Override
                     public void transmit(List<Recording> recordings) {
-                        log.info(name + ": got batch of size " + recordings.size());
-                        all.addAll(recordings);
+                        waiter.fail("Transmit should never have been called.");
+                        waiter.resume();
                     }
-                })
+                }.withBatchSize(20))
                 .proxyingAs(Bar.class);
         for(int i=0; i<100; ++i) {
             assertEquals(result, proxy.doSomethingShadowed(foo));
         }
-        try {
-            Thread.sleep(2000L);
-        } catch(InterruptedException ignored) { }
-        log.info(name + ": got " + all.size() + " total recordings.");
-        assertEquals(0, all.size());
+        waiter.await(3, TimeUnit.SECONDS);
         log.info(name + " finishing.");
     }
 
@@ -213,7 +206,7 @@ public class RecorderTest {
     public void testRateThrottling() throws InterruptedException, ExecutionException, TimeoutException {
         String name = new Object(){}.getClass().getEnclosingMethod().getName();
         log.info(name + " starting.");
-        final Collection<Recording> all = new ArrayList<>();
+        final Waiter waiter = new Waiter();
         Bar proxy = record(bar)
                 .filteringOut(
                         noise().from(Foo.class),
@@ -227,8 +220,8 @@ public class RecorderTest {
                 .sendingTo(new Transmitter() {
                     @Override
                     public void transmit(List<Recording> recordings) {
-                        log.info(name + ": got batch of size " + recordings.size());
-                        all.addAll(recordings);
+                        waiter.assertEquals(4, recordings.size());
+                        waiter.resume();
                     }
                 }.withBatchSize(4))
                 .proxyingAs(Bar.class);
@@ -238,11 +231,7 @@ public class RecorderTest {
                 Thread.sleep(250L);
             } catch (InterruptedException ignored) { }
         }
-        try {
-            Thread.sleep(2000L);
-        } catch(InterruptedException ignored) { }
-        log.info(name + ": got " + all.size() + " total recordings.");
-        assertEquals(4, all.size());
+        waiter.await(3, TimeUnit.SECONDS, 1);
         log.info(name + " finishing.");
     }
 }
