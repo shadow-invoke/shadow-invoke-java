@@ -57,7 +57,7 @@ public class RecorderTest {
                         })
                         .proxyingAs(Bar.class);
         assertEquals(result, proxy.doSomethingShadowed(foo));
-        Recording recording = future.get(1000L, TimeUnit.MILLISECONDS);
+        Recording recording = future.get(2000L, TimeUnit.MILLISECONDS);
 
         assertNotNull(recording.getReferenceArguments());
         assertTrue(recording.getReferenceArguments().length > 0);
@@ -111,7 +111,7 @@ public class RecorderTest {
                 })
                 .proxyingAs(Bar.class);
         assertEquals(result, proxy.doSomethingShadowed(foo));
-        Recording recording = future.get(1000L, TimeUnit.MILLISECONDS);
+        Recording recording = future.get(2000L, TimeUnit.MILLISECONDS);
 
         assertNotNull(recording.getReferenceArguments());
         assertTrue(recording.getReferenceArguments().length > 0);
@@ -168,7 +168,7 @@ public class RecorderTest {
         for(int i=0; i<100; ++i) {
             assertEquals(result, proxy.doSomethingShadowed(foo));
         }
-        waiter.await(5, TimeUnit.SECONDS, 5);
+        waiter.await(20, TimeUnit.SECONDS, 5);
         log.info(name + " finishing.");
     }
 
@@ -198,7 +198,7 @@ public class RecorderTest {
         for(int i=0; i<100; ++i) {
             assertEquals(result, proxy.doSomethingShadowed(foo));
         }
-        waiter.await(3, TimeUnit.SECONDS);
+        waiter.await(5, TimeUnit.SECONDS);
         log.info(name + " finishing.");
     }
 
@@ -231,7 +231,7 @@ public class RecorderTest {
                 Thread.sleep(250L);
             } catch (InterruptedException ignored) { }
         }
-        waiter.await(3, TimeUnit.SECONDS, 1);
+        waiter.await(20, TimeUnit.SECONDS, 1);
         log.info(name + " finishing.");
     }
 }
