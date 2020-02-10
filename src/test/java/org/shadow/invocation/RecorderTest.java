@@ -54,10 +54,10 @@ public class RecorderTest {
                                 log.info(name + ": got recording " + recording.toString());
                                 future.complete(recording);
                             }
-                        })
+                        }.withBatchSize(1))
                         .proxyingAs(Bar.class);
         assertEquals(result, proxy.doSomethingShadowed(foo));
-        Recording recording = future.get(20L, TimeUnit.SECONDS);
+        Recording recording = future.get(60L, TimeUnit.SECONDS);
 
         assertNotNull(recording.getReferenceArguments());
         assertTrue(recording.getReferenceArguments().length > 0);
@@ -108,10 +108,10 @@ public class RecorderTest {
                         log.info(name + ": got recording " + recording.toString());
                         future.complete(recording);
                     }
-                })
+                }.withBatchSize(1))
                 .proxyingAs(Bar.class);
         assertEquals(result, proxy.doSomethingShadowed(foo));
-        Recording recording = future.get(20L, TimeUnit.SECONDS);
+        Recording recording = future.get(60L, TimeUnit.SECONDS);
 
         assertNotNull(recording.getReferenceArguments());
         assertTrue(recording.getReferenceArguments().length > 0);
@@ -168,7 +168,7 @@ public class RecorderTest {
         for(int i=0; i<100; ++i) {
             assertEquals(result, proxy.doSomethingShadowed(foo));
         }
-        waiter.await(20, TimeUnit.SECONDS, 5);
+        waiter.await(60, TimeUnit.SECONDS, 5);
         log.info(name + " finishing.");
     }
 
@@ -193,13 +193,12 @@ public class RecorderTest {
                         waiter.fail("Transmit should never have been called.");
                         waiter.resume();
                     }
-                }.withBatchSize(20))
+                }.withBatchSize(1))
                 .proxyingAs(Bar.class);
         for(int i=0; i<100; ++i) {
             assertEquals(result, proxy.doSomethingShadowed(foo));
         }
         waiter.await(10, TimeUnit.SECONDS);
-        log.info(name + " finishing.");
     }
 
     @Test
@@ -231,7 +230,7 @@ public class RecorderTest {
                 Thread.sleep(250L);
             } catch (InterruptedException ignored) { }
         }
-        waiter.await(20, TimeUnit.SECONDS, 1);
+        waiter.await(60, TimeUnit.SECONDS, 1);
         log.info(name + " finishing.");
     }
 }
