@@ -1,10 +1,8 @@
 package org.shadow.invocation;
 
-import com.github.havarunner.HavaRunner;
 import lombok.extern.slf4j.Slf4j;
 import net.jodah.concurrentunit.Waiter;
 import org.junit.Test;
-import org.junit.runner.RunWith;
 import org.shadow.*;
 import org.shadow.field.Noise;
 import org.shadow.field.Secret;
@@ -22,7 +20,6 @@ import static org.junit.Assert.*;
 import static org.shadow.Fluently.*;
 
 @Slf4j
-@RunWith(HavaRunner.class)
 public class RecorderTest {
     private static final Bar bar = new Bar();
     private static final Baz baz = new Baz("Pawn", 75000.00D, 69.5F, 1234L, new HashMap<>());
@@ -48,16 +45,14 @@ public class RecorderTest {
                         .sendingTo(new Transmitter() {
                             @Override
                             public void transmit(List<Recording> recordings) {
-                                assertEquals(recordings.size(), 1);
-                                Recording recording = recordings.iterator().next();
-                                assertNotNull(recording);
-                                log.info(name + ": got recording " + recording.toString());
+                                Recording recording = recordings.get(0);
+                                log.info(name + ": got recording " + recording);
                                 future.complete(recording);
                             }
                         }.withBatchSize(1))
                         .proxyingAs(Bar.class);
         assertEquals(result, proxy.doSomethingShadowed(foo));
-        Recording recording = future.get(60L, TimeUnit.SECONDS);
+        Recording recording = future.get(3L, TimeUnit.SECONDS);
 
         assertNotNull(recording.getReferenceArguments());
         assertTrue(recording.getReferenceArguments().length > 0);
@@ -111,7 +106,7 @@ public class RecorderTest {
                 }.withBatchSize(1))
                 .proxyingAs(Bar.class);
         assertEquals(result, proxy.doSomethingShadowed(foo));
-        Recording recording = future.get(60L, TimeUnit.SECONDS);
+        Recording recording = future.get(3L, TimeUnit.SECONDS);
 
         assertNotNull(recording.getReferenceArguments());
         assertTrue(recording.getReferenceArguments().length > 0);
@@ -168,7 +163,7 @@ public class RecorderTest {
         for(int i=0; i<100; ++i) {
             assertEquals(result, proxy.doSomethingShadowed(foo));
         }
-        waiter.await(60, TimeUnit.SECONDS, 5);
+        waiter.await(3, TimeUnit.SECONDS, 5);
         log.info(name + " finishing.");
     }
 
@@ -198,7 +193,7 @@ public class RecorderTest {
         for(int i=0; i<100; ++i) {
             assertEquals(result, proxy.doSomethingShadowed(foo));
         }
-        waiter.await(10, TimeUnit.SECONDS);
+        waiter.await(3, TimeUnit.SECONDS);
     }
 
     @Test
@@ -219,6 +214,7 @@ public class RecorderTest {
                 .sendingTo(new Transmitter() {
                     @Override
                     public void transmit(List<Recording> recordings) {
+                        log.info(name + ": got batch of size " + recordings.size());
                         waiter.assertEquals(4, recordings.size());
                         waiter.resume();
                     }
@@ -230,7 +226,7 @@ public class RecorderTest {
                 Thread.sleep(250L);
             } catch (InterruptedException ignored) { }
         }
-        waiter.await(60, TimeUnit.SECONDS, 1);
+        waiter.await(3, TimeUnit.SECONDS, 1);
         log.info(name + " finishing.");
     }
 }

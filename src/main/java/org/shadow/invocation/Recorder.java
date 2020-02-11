@@ -11,16 +11,22 @@ import org.shadow.invocation.transmission.Transmitter;
 import org.shadow.throttling.Throttle;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.FluxSink;
+import reactor.core.scheduler.Scheduler;
 import reactor.core.scheduler.Schedulers;
 
 import java.lang.reflect.Method;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
 import java.util.function.Consumer;
 
 @Slf4j
 public class Recorder implements MethodInterceptor, Consumer<FluxSink<Recording>> {
+    private static final ScheduledExecutorService THREAD_POOL =
+            Executors.newScheduledThreadPool(Runtime.getRuntime().availableProcessors());
+    private static final Scheduler SCHEDULER = Schedulers.fromExecutorService(THREAD_POOL);
     private final Set<FluxSink<Recording>> listeners = new HashSet<>();
     private Flux<Recording> flux;
     private Filter[] filters;
@@ -53,7 +59,8 @@ public class Recorder implements MethodInterceptor, Consumer<FluxSink<Recording>
         if(transmitters != null && transmitters.length > 0) {
             for (Transmitter transmitter : transmitters) {
                 this.flux
-                        .subscribeOn(Schedulers.elastic())
+                        .publishOn(SCHEDULER)
+                        .subscribeOn(SCHEDULER)
                         .buffer(transmitter.getBatchSize())
                         .subscribe(transmitter);
             }
