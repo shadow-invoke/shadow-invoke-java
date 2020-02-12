@@ -7,7 +7,6 @@ import net.sf.cglib.proxy.MethodInterceptor;
 import net.sf.cglib.proxy.MethodProxy;
 import org.shadow.field.Filter;
 import org.shadow.field.FilteringCloner;
-import org.shadow.invocation.transmission.Transmitter;
 import org.shadow.throttling.Throttle;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.FluxSink;
@@ -36,7 +35,6 @@ public class Recorder implements MethodInterceptor, Consumer<FluxSink<Recording>
 
     public Recorder(Object originalInstance) {
         this.originalInstance = originalInstance;
-        this.flux = Flux.create(this, FluxSink.OverflowStrategy.DROP);
     }
 
     public Recorder filteringOut(Filter.Builder... filters) {
@@ -55,14 +53,15 @@ public class Recorder implements MethodInterceptor, Consumer<FluxSink<Recording>
         return this;
     }
 
-    public Recorder sendingTo(Transmitter... transmitters) {
-        if(transmitters != null && transmitters.length > 0) {
-            for (Transmitter transmitter : transmitters) {
+    public Recorder sendingTo(Record... records) {
+        if(records != null && records.length > 0) {
+            this.flux = Flux.create(this, FluxSink.OverflowStrategy.DROP);
+            for (Record record : records) {
                 this.flux
                         .publishOn(SCHEDULER)
                         .subscribeOn(SCHEDULER)
-                        .buffer(transmitter.getBatchSize())
-                        .subscribe(transmitter);
+                        .buffer(record.getBatchSize())
+                        .subscribe(record);
             }
         }
         return this;

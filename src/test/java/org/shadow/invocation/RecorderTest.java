@@ -6,7 +6,6 @@ import org.junit.Test;
 import org.shadow.*;
 import org.shadow.field.Noise;
 import org.shadow.field.Secret;
-import org.shadow.invocation.transmission.Transmitter;
 
 import java.time.LocalDateTime;
 import java.util.HashMap;
@@ -42,12 +41,22 @@ public class RecorderTest {
                                 noise().from(Baz.class).where(named("id")),
                                 secrets().from(Baz.class).where(named("salary"))
                         )
-                        .sendingTo(new Transmitter() {
+                        .sendingTo(new Record() {
                             @Override
-                            public void transmit(List<Recording> recordings) {
+                            public void put(List<Recording> recordings) {
                                 Recording recording = recordings.get(0);
                                 log.info(name + ": got recording " + recording);
                                 future.complete(recording);
+                            }
+
+                            @Override
+                            public List<Recording> get(Recording.InvocationKey key) {
+                                return null;
+                            }
+
+                            @Override
+                            public Recording getNearest(Recording.InvocationKey key, boolean priorOnly) {
+                                return null;
                             }
                         }.withBatchSize(1))
                         .proxyingAs(Bar.class);
@@ -94,14 +103,24 @@ public class RecorderTest {
                         noise().from(Baz.class), // annotated is default predicate
                         secrets().from(Baz.class) // annotated is default predicate
                 )
-                .sendingTo(new Transmitter() {
+                .sendingTo(new Record() {
                     @Override
-                    public void transmit(List<Recording> recordings) {
+                    public void put(List<Recording> recordings) {
                         assertEquals(recordings.size(), 1);
                         Recording recording = recordings.iterator().next();
                         assertNotNull(recording);
                         log.info(name + ": got recording " + recording.toString());
                         future.complete(recording);
+                    }
+
+                    @Override
+                    public List<Recording> get(Recording.InvocationKey key) {
+                        return null;
+                    }
+
+                    @Override
+                    public Recording getNearest(Recording.InvocationKey key, boolean priorOnly) {
+                        return null;
                     }
                 }.withBatchSize(1))
                 .proxyingAs(Bar.class);
@@ -151,12 +170,22 @@ public class RecorderTest {
                 .throttlingTo(
                         percent(1.0)
                 )
-                .sendingTo(new Transmitter() {
+                .sendingTo(new Record() {
                     @Override
-                    public void transmit(List<Recording> recordings) {
+                    public void put(List<Recording> recordings) {
                         log.info(name + ": got batch of size " + recordings.size());
                         waiter.assertEquals(20, recordings.size());
                         waiter.resume();
+                    }
+
+                    @Override
+                    public List<Recording> get(Recording.InvocationKey key) {
+                        return null;
+                    }
+
+                    @Override
+                    public Recording getNearest(Recording.InvocationKey key, boolean priorOnly) {
+                        return null;
                     }
                 }.withBatchSize(20))
                 .proxyingAs(Bar.class);
@@ -182,11 +211,21 @@ public class RecorderTest {
                 .throttlingTo(
                         percent(0.0)
                 )
-                .sendingTo(new Transmitter() {
+                .sendingTo(new Record() {
                     @Override
-                    public void transmit(List<Recording> recordings) {
+                    public void put(List<Recording> recordings) {
                         waiter.fail("Transmit should never have been called.");
                         waiter.resume();
+                    }
+
+                    @Override
+                    public List<Recording> get(Recording.InvocationKey key) {
+                        return null;
+                    }
+
+                    @Override
+                    public Recording getNearest(Recording.InvocationKey key, boolean priorOnly) {
+                        return null;
                     }
                 }.withBatchSize(1))
                 .proxyingAs(Bar.class);
@@ -211,12 +250,22 @@ public class RecorderTest {
                 .throttlingTo(
                         rate(2).per(1L, TimeUnit.SECONDS)
                 )
-                .sendingTo(new Transmitter() {
+                .sendingTo(new Record() {
                     @Override
-                    public void transmit(List<Recording> recordings) {
+                    public void put(List<Recording> recordings) {
                         log.info(name + ": got batch of size " + recordings.size());
                         waiter.assertEquals(4, recordings.size());
                         waiter.resume();
+                    }
+
+                    @Override
+                    public List<Recording> get(Recording.InvocationKey key) {
+                        return null;
+                    }
+
+                    @Override
+                    public Recording getNearest(Recording.InvocationKey key, boolean priorOnly) {
+                        return null;
                     }
                 }.withBatchSize(4))
                 .proxyingAs(Bar.class);

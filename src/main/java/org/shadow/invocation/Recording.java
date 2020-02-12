@@ -1,20 +1,19 @@
 package org.shadow.invocation;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 import lombok.ToString;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.codec.digest.DigestUtils;
 
 import java.lang.reflect.Method;
+import java.time.Instant;
 
 @Data
 @Slf4j
 @ToString
+@EqualsAndHashCode
 public class Recording {
-    private final static ObjectMapper MAPPER = new ObjectMapper();
     private final InvocationKey invocationKey;
     private final Object[] referenceArguments;
     private final Object referenceResult;
@@ -30,19 +29,22 @@ public class Recording {
         this.evaluatedResult = evaluatedResult;
     }
 
-    public String generateUniqueKey() throws JsonProcessingException {
-        return DigestUtils.sha3_256Hex(MAPPER.writeValueAsString(this.invocationKey));
-    }
-
     /**
      * A unique key for a particular invocation recording.
      * Recordings are considered equivalent if their target
-     * class, method, and relevant/evaluated inputs are equal.
+     * class, method, and evaluated/filtered inputs are equal.
+     * The time stamp allows a consumer to find recordings nearest
+     * to their time of interest. For example, when requesting a replay
+     * of an invocation having occurred at or near a particular moment in time.
      */
+    @Data
+    @ToString
     @AllArgsConstructor
-    private static class InvocationKey {
-        private Method invokedMethod;
-        private Object invocationTarget;
-        private Object[] evaluatedArguments;
+    @EqualsAndHashCode(exclude = {"timeStamp"})
+    public static class InvocationKey {
+        private final Method invokedMethod;
+        private final Object invocationTarget;
+        private final Object[] evaluatedArguments;
+        private final Instant timeStamp = Instant.now();
     }
 }
