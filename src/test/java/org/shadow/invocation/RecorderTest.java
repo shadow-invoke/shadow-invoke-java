@@ -41,7 +41,7 @@ public class RecorderTest extends ConcurrentTestCase {
                                 noise().from(Baz.class).where(named("id")),
                                 secrets().from(Baz.class).where(named("salary"))
                         )
-                        .sendingTo(new ObserveOnlyRecord() {
+                        .savingTo(new ObserveOnlyRecord() {
                             @Override
                             public void put(List<Recording> recordings) {
                                 Recording recording = recordings.get(0);
@@ -51,7 +51,7 @@ public class RecorderTest extends ConcurrentTestCase {
                         }.withBatchSize(1))
                         .proxyingAs(Bar.class);
         assertEquals(result, proxy.doSomethingShadowed(foo));
-        Recording recording = future.get(3L, TimeUnit.SECONDS);
+        Recording recording = future.get(5L, TimeUnit.SECONDS);
 
         assertNotNull(recording.getReferenceArguments());
         assertTrue(recording.getReferenceArguments().length > 0);
@@ -93,7 +93,7 @@ public class RecorderTest extends ConcurrentTestCase {
                         noise().from(Baz.class), // annotated is default predicate
                         secrets().from(Baz.class) // annotated is default predicate
                 )
-                .sendingTo(new ObserveOnlyRecord() {
+                .savingTo(new ObserveOnlyRecord() {
                     @Override
                     public void put(List<Recording> recordings) {
                         Recording recording = recordings.get(0);
@@ -103,7 +103,7 @@ public class RecorderTest extends ConcurrentTestCase {
                 }.withBatchSize(1))
                 .proxyingAs(Bar.class);
         assertEquals(result, proxy.doSomethingShadowed(foo));
-        Recording recording = future.get(3L, TimeUnit.SECONDS);
+        Recording recording = future.get(5L, TimeUnit.SECONDS);
 
         assertNotNull(recording.getReferenceArguments());
         assertTrue(recording.getReferenceArguments().length > 0);
@@ -147,7 +147,7 @@ public class RecorderTest extends ConcurrentTestCase {
                 .throttlingTo(
                         percent(1.0)
                 )
-                .sendingTo(new ObserveOnlyRecord() {
+                .savingTo(new ObserveOnlyRecord() {
                     @Override
                     public void put(List<Recording> recordings) {
                         log.info(name + ": got batch of size " + recordings.size());
@@ -159,7 +159,7 @@ public class RecorderTest extends ConcurrentTestCase {
         for(int i=0; i<100; ++i) {
             assertEquals(result, proxy.doSomethingShadowed(foo));
         }
-        await(3, TimeUnit.SECONDS, 5);
+        await(5, TimeUnit.SECONDS, 5);
         log.info(name + " finishing.");
     }
 
@@ -177,7 +177,7 @@ public class RecorderTest extends ConcurrentTestCase {
                 .throttlingTo(
                         percent(0.0)
                 )
-                .sendingTo(new ObserveOnlyRecord() {
+                .savingTo(new ObserveOnlyRecord() {
                     @Override
                     public void put(List<Recording> recordings) {
                         fail("Transmit should never have been called.");
@@ -188,7 +188,7 @@ public class RecorderTest extends ConcurrentTestCase {
         for(int i=0; i<100; ++i) {
             assertEquals(result, proxy.doSomethingShadowed(foo));
         }
-        await(3, TimeUnit.SECONDS);
+        await(5, TimeUnit.SECONDS);
     }
 
     @Test
@@ -205,7 +205,7 @@ public class RecorderTest extends ConcurrentTestCase {
                 .throttlingTo(
                         rate(2).per(1L, TimeUnit.SECONDS)
                 )
-                .sendingTo(new ObserveOnlyRecord() {
+                .savingTo(new ObserveOnlyRecord() {
                     @Override
                     public void put(List<Recording> recordings) {
                         log.info(name + ": got batch of size " + recordings.size());
@@ -220,7 +220,7 @@ public class RecorderTest extends ConcurrentTestCase {
                 Thread.sleep(250L);
             } catch (InterruptedException ignored) { }
         }
-        await(3, TimeUnit.SECONDS, 1);
+        await(5, TimeUnit.SECONDS, 1);
         log.info(name + " finishing.");
     }
 }

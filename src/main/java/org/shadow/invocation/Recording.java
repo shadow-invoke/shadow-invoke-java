@@ -40,11 +40,18 @@ public class Recording {
     @Data
     @ToString
     @AllArgsConstructor
-    @EqualsAndHashCode(exclude = {"timeStamp"})
+    @EqualsAndHashCode(exclude = {"timestamp"})
     public static class InvocationKey {
         private final Method invokedMethod;
         private final Object invocationTarget;
         private final Object[] evaluatedArguments;
-        private final Instant timeStamp = Instant.now();
+        private final Instant timestamp;
+
+        public InvocationKey(Method invokedMethod, Object invocationTarget, Object[] evaluatedArguments) {
+            this.invocationTarget = invocationTarget;
+            this.invokedMethod = invokedMethod;
+            this.evaluatedArguments = evaluatedArguments;
+            this.timestamp = Instant.now();
+        }
     }
 }

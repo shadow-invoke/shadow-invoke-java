@@ -53,17 +53,13 @@ public class Recorder implements MethodInterceptor, Consumer<FluxSink<Recording>
         return this;
     }
 
-    public Recorder sendingTo(Record... records) {
-        if(records != null && records.length > 0) {
+    public Recorder savingTo(Record record) {
             this.flux = Flux.create(this, FluxSink.OverflowStrategy.DROP);
-            for (Record record : records) {
-                this.flux
-                        .publishOn(SCHEDULER)
-                        .subscribeOn(SCHEDULER)
-                        .buffer(record.getBatchSize())
-                        .subscribe(record);
-            }
-        }
+            this.flux
+                    .publishOn(SCHEDULER)
+                    .subscribeOn(SCHEDULER)
+                    .buffer(record.getBatchSize())
+                    .subscribe(record);
         return this;
     }
 

@@ -1,9 +1,11 @@
 package org.shadow;
 
+import lombok.experimental.UtilityClass;
 import org.shadow.field.Filter;
 import org.shadow.field.Noise;
 import org.shadow.field.Secret;
 import org.shadow.invocation.Recorder;
+import org.shadow.invocation.Replayer;
 import org.shadow.throttling.Percentage;
 import org.shadow.throttling.Rate;
 import org.shadow.throttling.Throttle;
@@ -11,16 +13,13 @@ import org.shadow.throttling.Throttle;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Field;
 import java.util.Arrays;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Predicate;
 
+@UtilityClass
 public class Fluently {
-    private Fluently() {}
-
-    public static Throttle percent(int percent) {
-        return new Percentage(percent);
-    }
-
     public static Throttle percent(double percent) {
         return new Percentage(percent);
     }
@@ -38,11 +37,20 @@ public class Fluently {
     }
 
     public static Predicate<Field> named(String... names) {
-        // TODO: Make more efficient using actual class and hashset.
-        return field -> {
-            if(field == null || names == null || names.length == 0) return false;
-            return Arrays.asList(names).contains(field.getName());
-        };
+        return new NamesPredicate(names);
+    }
+
+    private static class NamesPredicate implements Predicate<Field> {
+        private final Set<String> nameSet = new HashSet<>();
+
+        public NamesPredicate(String... names) {
+            this.nameSet.addAll(Arrays.asList(names));
+        }
+
+        @Override
+        public boolean test(Field field) {
+            return field != null && this.nameSet.contains(field.getName());
+        }
     }
 
     public static Predicate<Field> annotated(Class<? extends Annotation> cls) {
@@ -72,5 +80,9 @@ public class Fluently {
 
     public static Recorder record(Object target) {
         return new Recorder(target);
+    }
+
+    public static <T> Replayer<T> replay(Class<T> cls) {
+        return new Replayer<>(cls);
     }
 }

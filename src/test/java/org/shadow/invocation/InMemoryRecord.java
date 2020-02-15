@@ -51,7 +51,7 @@ public class InMemoryRecord extends Record {
 
     @Override
     public Recording getNearest(Recording.InvocationKey key, boolean priorOnly) {
-        if(key == null || key.getTimeStamp() == null) {
+        if(key == null || key.getTimestamp() == null) {
             log.error("Null key or timestamp.");
             return null;
         }
@@ -60,8 +60,8 @@ public class InMemoryRecord extends Record {
         if(recordings != null && !recordings.isEmpty()) {
             Duration min = Duration.ofSeconds(Long.MAX_VALUE, 999_999_999);
             for(Recording recording : recordings) {
-                if(recording.getInvocationKey().getTimeStamp() != null) {
-                    Duration diff = Duration.between(recording.getInvocationKey().getTimeStamp(), key.getTimeStamp());
+                if(recording.getInvocationKey().getTimestamp() != null) {
+                    Duration diff = Duration.between(recording.getInvocationKey().getTimestamp(), key.getTimestamp());
                     if(!diff.isNegative() || !priorOnly) {
                         diff = diff.abs();
                         if (diff.compareTo(min) < 0) {
