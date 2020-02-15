@@ -1,7 +1,7 @@
 package org.shadow.invocation;
 
 import lombok.extern.slf4j.Slf4j;
-import net.jodah.concurrentunit.Waiter;
+import net.jodah.concurrentunit.ConcurrentTestCase;
 import org.junit.Test;
 import org.shadow.*;
 import org.shadow.field.Noise;
@@ -19,7 +19,7 @@ import static org.junit.Assert.*;
 import static org.shadow.Fluently.*;
 
 @Slf4j
-public class RecorderTest {
+public class RecorderTest extends ConcurrentTestCase {
     private static final Bar bar = new Bar();
     private static final Baz baz = new Baz("Pawn", 75000.00D, 69.5F, 1234L, new HashMap<>());
     private static final Foo foo = new Foo("Bob", "Smith", 35, LocalDateTime.now(), baz);
@@ -41,22 +41,12 @@ public class RecorderTest {
                                 noise().from(Baz.class).where(named("id")),
                                 secrets().from(Baz.class).where(named("salary"))
                         )
-                        .sendingTo(new Record() {
+                        .sendingTo(new ObserveOnlyRecord() {
                             @Override
                             public void put(List<Recording> recordings) {
                                 Recording recording = recordings.get(0);
                                 log.info(name + ": got recording " + recording);
                                 future.complete(recording);
-                            }
-
-                            @Override
-                            public List<Recording> get(Recording.InvocationKey key) {
-                                return null;
-                            }
-
-                            @Override
-                            public Recording getNearest(Recording.InvocationKey key, boolean priorOnly) {
-                                return null;
                             }
                         }.withBatchSize(1))
                         .proxyingAs(Bar.class);
@@ -103,24 +93,12 @@ public class RecorderTest {
                         noise().from(Baz.class), // annotated is default predicate
                         secrets().from(Baz.class) // annotated is default predicate
                 )
-                .sendingTo(new Record() {
+                .sendingTo(new ObserveOnlyRecord() {
                     @Override
                     public void put(List<Recording> recordings) {
-                        assertEquals(recordings.size(), 1);
-                        Recording recording = recordings.iterator().next();
-                        assertNotNull(recording);
+                        Recording recording = recordings.get(0);
                         log.info(name + ": got recording " + recording.toString());
                         future.complete(recording);
-                    }
-
-                    @Override
-                    public List<Recording> get(Recording.InvocationKey key) {
-                        return null;
-                    }
-
-                    @Override
-                    public Recording getNearest(Recording.InvocationKey key, boolean priorOnly) {
-                        return null;
                     }
                 }.withBatchSize(1))
                 .proxyingAs(Bar.class);
@@ -159,7 +137,6 @@ public class RecorderTest {
     public void testZeroPercentThrottling() throws TimeoutException, InterruptedException {
         String name = new Object(){}.getClass().getEnclosingMethod().getName();
         log.info(name + " starting.");
-        final Waiter waiter = new Waiter();
         Bar proxy = record(bar)
                 .filteringOut(
                         noise().from(Foo.class),
@@ -170,29 +147,19 @@ public class RecorderTest {
                 .throttlingTo(
                         percent(1.0)
                 )
-                .sendingTo(new Record() {
+                .sendingTo(new ObserveOnlyRecord() {
                     @Override
                     public void put(List<Recording> recordings) {
                         log.info(name + ": got batch of size " + recordings.size());
-                        waiter.assertEquals(20, recordings.size());
-                        waiter.resume();
-                    }
-
-                    @Override
-                    public List<Recording> get(Recording.InvocationKey key) {
-                        return null;
-                    }
-
-                    @Override
-                    public Recording getNearest(Recording.InvocationKey key, boolean priorOnly) {
-                        return null;
+                        threadAssertEquals(20, recordings.size());
+                        resume();
                     }
                 }.withBatchSize(20))
                 .proxyingAs(Bar.class);
         for(int i=0; i<100; ++i) {
             assertEquals(result, proxy.doSomethingShadowed(foo));
         }
-        waiter.await(3, TimeUnit.SECONDS, 5);
+        await(3, TimeUnit.SECONDS, 5);
         log.info(name + " finishing.");
     }
 
@@ -200,7 +167,6 @@ public class RecorderTest {
     public void testOneHundredPercentThrottling() throws TimeoutException, InterruptedException {
         String name = new Object(){}.getClass().getEnclosingMethod().getName();
         log.info(name + " starting.");
-        final Waiter waiter = new Waiter();
         Bar proxy = record(bar)
                 .filteringOut(
                         noise().from(Foo.class),
@@ -211,35 +177,24 @@ public class RecorderTest {
                 .throttlingTo(
                         percent(0.0)
                 )
-                .sendingTo(new Record() {
+                .sendingTo(new ObserveOnlyRecord() {
                     @Override
                     public void put(List<Recording> recordings) {
-                        waiter.fail("Transmit should never have been called.");
-                        waiter.resume();
-                    }
-
-                    @Override
-                    public List<Recording> get(Recording.InvocationKey key) {
-                        return null;
-                    }
-
-                    @Override
-                    public Recording getNearest(Recording.InvocationKey key, boolean priorOnly) {
-                        return null;
+                        fail("Transmit should never have been called.");
+                        resume();
                     }
                 }.withBatchSize(1))
                 .proxyingAs(Bar.class);
         for(int i=0; i<100; ++i) {
             assertEquals(result, proxy.doSomethingShadowed(foo));
         }
-        waiter.await(3, TimeUnit.SECONDS);
+        await(3, TimeUnit.SECONDS);
     }
 
     @Test
     public void testRateThrottling() throws InterruptedException, ExecutionException, TimeoutException {
         String name = new Object(){}.getClass().getEnclosingMethod().getName();
         log.info(name + " starting.");
-        final Waiter waiter = new Waiter();
         Bar proxy = record(bar)
                 .filteringOut(
                         noise().from(Foo.class),
@@ -250,22 +205,12 @@ public class RecorderTest {
                 .throttlingTo(
                         rate(2).per(1L, TimeUnit.SECONDS)
                 )
-                .sendingTo(new Record() {
+                .sendingTo(new ObserveOnlyRecord() {
                     @Override
                     public void put(List<Recording> recordings) {
                         log.info(name + ": got batch of size " + recordings.size());
-                        waiter.assertEquals(4, recordings.size());
-                        waiter.resume();
-                    }
-
-                    @Override
-                    public List<Recording> get(Recording.InvocationKey key) {
-                        return null;
-                    }
-
-                    @Override
-                    public Recording getNearest(Recording.InvocationKey key, boolean priorOnly) {
-                        return null;
+                        threadAssertEquals(4, recordings.size());
+                        resume();
                     }
                 }.withBatchSize(4))
                 .proxyingAs(Bar.class);
@@ -275,7 +220,7 @@ public class RecorderTest {
                 Thread.sleep(250L);
             } catch (InterruptedException ignored) { }
         }
-        waiter.await(3, TimeUnit.SECONDS, 1);
+        await(3, TimeUnit.SECONDS, 1);
         log.info(name + " finishing.");
     }
 }
