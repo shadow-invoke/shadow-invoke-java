@@ -1,14 +1,15 @@
 package org.shadow.invocation;
 
 import lombok.extern.slf4j.Slf4j;
-import net.jodah.concurrentunit.ConcurrentTestCase;
 import org.junit.Test;
-import org.shadow.*;
+import org.shadow.Bar;
+import org.shadow.Baz;
+import org.shadow.DefaultValue;
+import org.shadow.Foo;
 import org.shadow.field.Noise;
 import org.shadow.field.Secret;
 
 import java.time.LocalDateTime;
-import java.util.HashMap;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
@@ -19,16 +20,7 @@ import static org.junit.Assert.*;
 import static org.shadow.Fluently.*;
 
 @Slf4j
-public class RecorderTest extends ConcurrentTestCase {
-    private static final Bar bar = new Bar();
-    private static final Baz baz = new Baz("Pawn", 75000.00D, 69.5F, 1234L, new HashMap<>());
-    private static final Foo foo = new Foo("Bob", "Smith", 35, LocalDateTime.now(), baz);
-    private static final String result = bar.doSomethingShadowed(foo);
-    static {
-        baz.getTaskTime().put(TimeUnit.MINUTES, Task.Clerical);
-        baz.getTaskTime().put(TimeUnit.HOURS, Task.Management);
-    }
-
+public class RecorderTest extends BaseTest {
     @Test
     public void testRecordNoiseSecretsNamed() throws InterruptedException, TimeoutException, ExecutionException {
         String name = new Object(){}.getClass().getEnclosingMethod().getName();

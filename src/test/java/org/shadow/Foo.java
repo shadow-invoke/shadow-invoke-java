@@ -3,14 +3,16 @@ package org.shadow;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
+import lombok.ToString;
 import org.shadow.field.Noise;
 import org.shadow.field.Secret;
 
 import java.time.LocalDateTime;
 
 @Data
-@AllArgsConstructor
+@ToString
 @EqualsAndHashCode
+@AllArgsConstructor
 public class Foo {
     private String firstName;
     @Secret
