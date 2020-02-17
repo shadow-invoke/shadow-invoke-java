@@ -12,15 +12,13 @@ import java.lang.reflect.Method;
 import java.time.Instant;
 import java.util.Arrays;
 
-/**
- * Foo output = replay(Bar.class).atTime(timestamp).retrievingFrom(recorder).start().myMethod(input1, input2, input3);
- */
 @Slf4j
 public class Replayer <T> implements MethodInterceptor {
     private final Class<T> cls;
     private Instant timestamp = null;
     private Record record = null;
     private int objectDepth = 10;
+    private boolean priorOnly = false;
     private Filter[] filters;
     private FilteringCloner filteringCloner;
 
@@ -41,6 +39,13 @@ public class Replayer <T> implements MethodInterceptor {
     }
 
     public Replayer<T> atTime(Instant timestamp) {
+        this.priorOnly = false;
+        this.timestamp = timestamp;
+        return this;
+    }
+
+    public Replayer<T> atTimeBefore(Instant timestamp) {
+        this.priorOnly = true;
         this.timestamp = timestamp;
         return this;
     }
@@ -75,6 +80,7 @@ public class Replayer <T> implements MethodInterceptor {
                 this.filteringCloner.filterAsEvaluatedCopy(args),
                 this.timestamp
         );
-        return this.record.get(key);
+        Recording recording = this.record.getNearest(key, this.priorOnly);
+        return (recording != null)? recording.getReferenceResult() : null;
     }
 }

@@ -1,6 +1,7 @@
 package org.shadow.invocation;
 
 import lombok.extern.slf4j.Slf4j;
+import org.junit.Test;
 import org.shadow.Bar;
 import org.shadow.Baz;
 import org.shadow.Foo;
@@ -16,7 +17,7 @@ import static org.shadow.Fluently.*;
 
 @Slf4j
 public class ReplayerTest extends BaseTest {
-    //@Test
+    @Test
     public void testReplay() throws NoSuchMethodException, TimeoutException, InterruptedException, ReplayException {
         String name = new Object() {}.getClass().getEnclosingMethod().getName();
         log.info(name + " starting.");
@@ -47,10 +48,9 @@ public class ReplayerTest extends BaseTest {
                             secrets().from(Baz.class)
                     )
                     .retrievingFrom(record)
-                    .atTime(timestamp)
+                    .atTimeBefore(timestamp)
                     .start();
         assertEquals(result, proxy.doSomethingShadowed(foo));
-
         log.info(name + " finishing.");
     }
 }
