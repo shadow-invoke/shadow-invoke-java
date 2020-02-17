@@ -46,9 +46,9 @@ public class InMemoryRecord extends Record {
     }
 
     @Override
-    public Recording getNearest(Recording.InvocationKey key, boolean priorOnly) {
+    public Recording getNearest(Recording.InvocationKey key) {
         if(key == null || key.getTimestamp() == null) {
-            log.error("Null key or timestamp.");
+            log.error("Null key or call timestamp.");
             return null;
         }
         List<Recording> recordings = this.get(key);
@@ -58,9 +58,9 @@ public class InMemoryRecord extends Record {
             for(Recording recording : recordings) {
                 if(recording.getInvocationKey().getTimestamp() != null) {
                     Duration diff = Duration.between(recording.getInvocationKey().getTimestamp(), key.getTimestamp());
-                    if(!diff.isNegative() || !priorOnly) {
+                    if(diff.isNegative() || diff.isZero()) { // looking for the nearest recording occurring before the call timestamp
                         diff = diff.abs();
-                        if (diff.compareTo(min) < 0) {
+                        if (diff.compareTo(min) <= 0) {
                             min = diff;
                             nearest = recording;
                         }

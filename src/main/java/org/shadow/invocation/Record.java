@@ -21,11 +21,10 @@ public abstract class Record implements Subscriber<List<Recording>> {
 
     /***
      * Get a recording matching the key which is nearest the timestamp in the key (can be before or after).
-     * @param key The key of the recording, with timestamp.
-     * @param priorOnly Does the retrieved recording need to have occurred strictly before the timestamp?
+     * @param key The key of the recording, with call timestamp.
      * @return A recording matching the given key, or null if none found.
      */
-    public abstract Recording getNearest(Recording.InvocationKey key, boolean priorOnly);
+    public abstract Recording getNearest(Recording.InvocationKey key);
 
     public Record withBatchSize(int size) {
         this.batchSize = size;

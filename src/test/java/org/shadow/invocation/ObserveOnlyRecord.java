@@ -9,7 +9,7 @@ public abstract class ObserveOnlyRecord extends Record {
     }
 
     @Override
-    public Recording getNearest(Recording.InvocationKey key, boolean priorOnly) {
+    public Recording getNearest(Recording.InvocationKey key) {
         return null;
     }
 }

@@ -21,8 +21,9 @@ public class Recording {
     private final Object evaluatedResult;
 
     public Recording(Class<?> invocationTarget, Method invokedMethod, Object[] referenceArguments,
-                     Object referenceResult, Object[] evaluatedArguments, Object evaluatedResult) {
-        this.invocationKey = new InvocationKey(invokedMethod, invocationTarget, evaluatedArguments);
+                     Object referenceResult, Object[] evaluatedArguments, Object evaluatedResult,
+                     Instant calledAt) {
+        this.invocationKey = new InvocationKey(invokedMethod, invocationTarget, evaluatedArguments, calledAt);
         this.referenceArguments = referenceArguments;
         this.referenceResult = referenceResult;
         this.evaluatedArguments = evaluatedArguments;
@@ -46,12 +47,5 @@ public class Recording {
         private final Class<?> invocationTarget;
         private final Object[] evaluatedArguments;
         private final Instant timestamp;
-
-        public InvocationKey(Method invokedMethod, Class<?> invocationTarget, Object[] evaluatedArguments) {
-            this.invocationTarget = invocationTarget;
-            this.invokedMethod = invokedMethod;
-            this.evaluatedArguments = evaluatedArguments;
-            this.timestamp = Instant.now();
-        }
     }
 }

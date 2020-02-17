@@ -13,6 +13,7 @@ import reactor.core.scheduler.Scheduler;
 import reactor.core.scheduler.Schedulers;
 
 import java.lang.reflect.Method;
+import java.time.Instant;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.Executors;
@@ -65,13 +66,14 @@ public class Recorder implements MethodInterceptor, Consumer<FluxSink<Recording>
 
     @Override
     public Object intercept(Object o, Method method, Object[] arguments, MethodProxy proxy) throws Throwable {
+        Instant calledAt = Instant.now();
         Object result = method.invoke(this.originalInstance, arguments);
         try {
-            Recording recording = new Recording(this.originalInstance.getClass(), method,
-                                                this.objectFilter.filterAsReferenceCopy(arguments),
-                                                this.objectFilter.filterAsReferenceCopy(result),
-                                                this.objectFilter.filterAsEvaluatedCopy(arguments),
-                                                this.objectFilter.filterAsEvaluatedCopy(result));
+            Recording recording = new Recording(
+                    this.originalInstance.getClass(), method, this.objectFilter.filterAsReferenceCopy(arguments),
+                    this.objectFilter.filterAsReferenceCopy(result), this.objectFilter.filterAsEvaluatedCopy(arguments),
+                    this.objectFilter.filterAsEvaluatedCopy(result), calledAt
+            );
             if(this.getThrottle() == null || !this.getThrottle().reject()) {
                 this.listeners.forEach(l -> l.next(recording));
             }

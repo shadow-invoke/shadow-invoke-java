@@ -39,15 +39,16 @@ public class ReplayerTest extends BaseTest {
                 .filteringWith(filter)
                 .savingTo(record)
                 .proxyingAs(Bar.class);
-        assertEquals(result, proxy.doSomethingShadowed(foo));
+        // TODO: How does client signial to service that this recording is a shadowed call to be evaluated against a candidate?
         Instant timestamp = Instant.now();
+        assertEquals(result, proxy.doSomethingShadowed(foo));
         await(5L, TimeUnit.SECONDS);
 
         proxy = replay(Bar.class)
                     .filteringWith(filter)
                     .retrievingFrom(record)
-                    .atTimeBefore(timestamp)
-                    .start();
+                    .startingAt(timestamp);
+        // TODO: Where does timestamp come from in the context of a replay? Candidate service receives ReplayRequest instead of usual input?
         assertEquals(result, proxy.doSomethingShadowed(foo));
         log.info(name + " finishing.");
     }

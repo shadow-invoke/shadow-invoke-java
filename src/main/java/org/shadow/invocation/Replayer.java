@@ -15,7 +15,6 @@ public class Replayer <T> implements MethodInterceptor {
     private final Class<T> cls;
     private Instant timestamp = null;
     private Record record = null;
-    private boolean priorOnly = false;
     private ObjectFilter objectFilter;
 
     public Replayer(Class<T> cls) {
@@ -27,24 +26,13 @@ public class Replayer <T> implements MethodInterceptor {
         return this;
     }
 
-    public Replayer<T> atTime(Instant timestamp) {
-        this.priorOnly = false;
-        this.timestamp = timestamp;
-        return this;
-    }
-
-    public Replayer<T> atTimeBefore(Instant timestamp) {
-        this.priorOnly = true;
-        this.timestamp = timestamp;
-        return this;
-    }
-
     public Replayer<T> retrievingFrom(Record record) {
         this.record = record;
         return this;
     }
 
-    public T start() throws ReplayException {
+    public T startingAt(Instant timestamp) throws ReplayException {
+        this.timestamp = timestamp;
         if(this.cls == null) {
             throw new ReplayException("Replayer created with null class.");
         }
@@ -69,7 +57,7 @@ public class Replayer <T> implements MethodInterceptor {
                 this.objectFilter.filterAsEvaluatedCopy(args),
                 this.timestamp
         );
-        Recording recording = this.record.getNearest(key, this.priorOnly);
+        Recording recording = this.record.getNearest(key);
         return (recording != null)? recording.getReferenceResult() : null;
     }
 }
