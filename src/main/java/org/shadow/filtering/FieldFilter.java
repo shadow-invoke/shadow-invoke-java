@@ -1,4 +1,4 @@
-package org.shadow.field;
+package org.shadow.filtering;
 
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
@@ -13,7 +13,7 @@ import java.util.function.Predicate;
 @Data
 @Slf4j
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
-public class Filter {
+public class FieldFilter {
     private final Predicate<Field> selector;
     private final Function<Object, Object> generateEvaluatedMember;
     private final Function<Object, Object> generateReferenceMember;
@@ -62,8 +62,8 @@ public class Filter {
             return this;
         }
 
-        public Filter build() {
-            return new Filter(this.selector, this.generateEvaluatedMember, this.generateReferenceMember, this.target);
+        public FieldFilter build() {
+            return new FieldFilter(this.selector, this.generateEvaluatedMember, this.generateReferenceMember, this.target);
         }
     }
 }

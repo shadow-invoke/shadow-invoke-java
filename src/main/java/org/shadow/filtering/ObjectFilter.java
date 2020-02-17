@@ -1,4 +1,4 @@
-package org.shadow.field;
+package org.shadow.filtering;
 
 import com.rits.cloning.Cloner;
 import org.shadow.DefaultValue;
@@ -7,14 +7,18 @@ import org.shadow.ReflectiveAccess;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 
-public class FilteringCloner {
+public class ObjectFilter {
     private static final Cloner CLONER = new Cloner();
-    private final int objectDepth; // to filter recursively
-    private final Filter[] constituentFilters;
+    private int objectDepth = 10; // to filter recursively
+    private final FieldFilter[] constituentFieldFilters;
 
-    public FilteringCloner(int objectDepth, Filter[] constituentFilters) {
+    public ObjectFilter(FieldFilter[] constituentFieldFilters) {
+        this.constituentFieldFilters = constituentFieldFilters;
+    }
+
+    public ObjectFilter toObjectDepth(int objectDepth) {
         this.objectDepth = objectDepth;
-        this.constituentFilters = constituentFilters;
+        return this;
     }
 
     public Object filterAsEvaluatedCopy(Object obj) {
@@ -50,11 +54,11 @@ public class FilteringCloner {
         Class<?> cls = obj.getClass();
         for(Field field : cls.getDeclaredFields()) {
             field.setAccessible(true);
-            for(Filter filter : this.constituentFilters) {
+            for(FieldFilter fieldFilter : this.constituentFieldFilters) {
                 if(isEvaluated) {
-                    obj = filter.filterAsEvaluatedCopy(obj, field);
+                    obj = fieldFilter.filterAsEvaluatedCopy(obj, field);
                 } else {
-                    obj = filter.filterAsReferenceCopy(obj, field);
+                    obj = fieldFilter.filterAsReferenceCopy(obj, field);
                 }
             }
             boolean filterable = (DefaultValue.of(field.getType()) == null) && !Modifier.isStatic(field.getModifiers());

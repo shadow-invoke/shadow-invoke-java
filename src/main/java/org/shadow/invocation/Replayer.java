@@ -5,36 +5,25 @@ import net.sf.cglib.proxy.Enhancer;
 import net.sf.cglib.proxy.MethodInterceptor;
 import net.sf.cglib.proxy.MethodProxy;
 import org.shadow.exception.ReplayException;
-import org.shadow.field.Filter;
-import org.shadow.field.FilteringCloner;
+import org.shadow.filtering.ObjectFilter;
 
 import java.lang.reflect.Method;
 import java.time.Instant;
-import java.util.Arrays;
 
 @Slf4j
 public class Replayer <T> implements MethodInterceptor {
     private final Class<T> cls;
     private Instant timestamp = null;
     private Record record = null;
-    private int objectDepth = 10;
     private boolean priorOnly = false;
-    private Filter[] filters;
-    private FilteringCloner filteringCloner;
+    private ObjectFilter objectFilter;
 
     public Replayer(Class<T> cls) {
         this.cls = cls;
     }
 
-    public Replayer<T> filteringOut(Filter.Builder... filters) {
-        this.filters = Arrays.stream(filters).map(Filter.Builder::build).toArray(Filter[]::new);
-        this.filteringCloner = new FilteringCloner(this.objectDepth, this.filters);
-        return this;
-    }
-
-    public Replayer<T> toDepth(int objectDepth) {
-        this.objectDepth = objectDepth;
-        this.filteringCloner = new FilteringCloner(objectDepth, this.filters);
+    public Replayer<T> filteringWith(ObjectFilter filter) {
+        this.objectFilter = filter;
         return this;
     }
 
@@ -62,8 +51,8 @@ public class Replayer <T> implements MethodInterceptor {
         if(this.record == null) {
             throw new ReplayException("Replayer started with null record.");
         }
-        if(this.filters == null) {
-            throw new ReplayException("Replayer started with null filters.");
+        if(this.objectFilter == null) {
+            throw new ReplayException("Replayer started with null filter.");
         }
         if(this.timestamp == null) {
             log.warn("Replayer started with null timestamp. Defaulting to now.");
@@ -77,7 +66,7 @@ public class Replayer <T> implements MethodInterceptor {
         Recording.InvocationKey key = new Recording.InvocationKey(
                 method,
                 this.cls,
-                this.filteringCloner.filterAsEvaluatedCopy(args),
+                this.objectFilter.filterAsEvaluatedCopy(args),
                 this.timestamp
         );
         Recording recording = this.record.getNearest(key, this.priorOnly);

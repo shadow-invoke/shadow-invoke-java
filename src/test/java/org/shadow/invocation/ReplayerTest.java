@@ -3,9 +3,11 @@ package org.shadow.invocation;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.Test;
 import org.shadow.Bar;
+import org.shadow.BaseTest;
 import org.shadow.Baz;
 import org.shadow.Foo;
 import org.shadow.exception.ReplayException;
+import org.shadow.filtering.ObjectFilter;
 
 import java.lang.reflect.Method;
 import java.time.Instant;
@@ -25,13 +27,14 @@ public class ReplayerTest extends BaseTest {
             resume();
             return true;
         }).withBatchSize(1);
+        ObjectFilter filter = filter(
+                noise().from(Foo.class),
+                secrets().from(Foo.class),
+                noise().from(Baz.class),
+                secrets().from(Baz.class)
+        );
         Bar proxy = record(bar)
-                .filteringOut(
-                    noise().from(Foo.class),
-                    secrets().from(Foo.class),
-                    noise().from(Baz.class),
-                    secrets().from(Baz.class)
-                )
+                .filteringWith(filter)
                 .savingTo(record)
                 .proxyingAs(Bar.class);
         assertEquals(result, proxy.doSomethingShadowed(foo));
@@ -41,12 +44,7 @@ public class ReplayerTest extends BaseTest {
         Method method = Bar.class.getMethod("doSomethingShadowed", Foo.class);
         Recording.InvocationKey key = new Recording.InvocationKey(method, Bar.class, new Object[]{foo}, timestamp);
         proxy = replay(Bar.class)
-                    .filteringOut(
-                            noise().from(Foo.class),
-                            secrets().from(Foo.class),
-                            noise().from(Baz.class),
-                            secrets().from(Baz.class)
-                    )
+                    .filteringWith(filter)
                     .retrievingFrom(record)
                     .atTimeBefore(timestamp)
                     .start();

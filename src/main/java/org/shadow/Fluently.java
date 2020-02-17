@@ -1,9 +1,10 @@
 package org.shadow;
 
 import lombok.experimental.UtilityClass;
-import org.shadow.field.Filter;
-import org.shadow.field.Noise;
-import org.shadow.field.Secret;
+import org.shadow.filtering.FieldFilter;
+import org.shadow.filtering.Noise;
+import org.shadow.filtering.ObjectFilter;
+import org.shadow.filtering.Secret;
 import org.shadow.invocation.Recorder;
 import org.shadow.invocation.Replayer;
 import org.shadow.throttling.Percentage;
@@ -60,19 +61,23 @@ public class Fluently {
         };
     }
 
-    public static Filter.Builder noise() {
+    public static ObjectFilter filter(FieldFilter.Builder... fieldFilterBuilders) {
+        return new ObjectFilter(Arrays.stream(fieldFilterBuilders).map(FieldFilter.Builder::build).toArray(FieldFilter[]::new));
+    }
+
+    public static FieldFilter.Builder noise() {
         // Noise is ignored, meaning that it gets scrubbed in the evaluated
         // object copies but kept unaltered in the reference object copies.
-        return new Filter.Builder(
+        return new FieldFilter.Builder(
                 (obj) -> DefaultValue.of(obj.getClass()),
                 (obj) -> obj
         ).where(annotated(Noise.class));
     }
 
-    public static Filter.Builder secrets() {
+    public static FieldFilter.Builder secrets() {
         // Secrets are redacted, meaning that they're scrubbed in both the
         // evaluated object copies and the reference object copies.
-        return new Filter.Builder(
+        return new FieldFilter.Builder(
                 (obj) -> DefaultValue.of(obj.getClass()),
                 (obj) -> DefaultValue.of(obj.getClass())
         ).where(annotated(Secret.class));

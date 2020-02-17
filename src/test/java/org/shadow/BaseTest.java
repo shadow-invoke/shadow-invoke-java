@@ -1,11 +1,7 @@
-package org.shadow.invocation;
+package org.shadow;
 
 import net.jodah.concurrentunit.ConcurrentTestCase;
 import org.junit.Before;
-import org.shadow.Bar;
-import org.shadow.Baz;
-import org.shadow.Foo;
-import org.shadow.Task;
 
 import java.time.LocalDateTime;
 import java.util.HashMap;

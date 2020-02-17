@@ -5,8 +5,7 @@ import lombok.extern.slf4j.Slf4j;
 import net.sf.cglib.proxy.Enhancer;
 import net.sf.cglib.proxy.MethodInterceptor;
 import net.sf.cglib.proxy.MethodProxy;
-import org.shadow.field.Filter;
-import org.shadow.field.FilteringCloner;
+import org.shadow.filtering.ObjectFilter;
 import org.shadow.throttling.Throttle;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.FluxSink;
@@ -14,7 +13,6 @@ import reactor.core.scheduler.Scheduler;
 import reactor.core.scheduler.Schedulers;
 
 import java.lang.reflect.Method;
-import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.Executors;
@@ -28,9 +26,7 @@ public class Recorder implements MethodInterceptor, Consumer<FluxSink<Recording>
     private static final Scheduler SCHEDULER = Schedulers.fromExecutorService(THREAD_POOL);
     private final Set<FluxSink<Recording>> listeners = new HashSet<>();
     private Flux<Recording> flux;
-    private Filter[] filters;
-    private FilteringCloner filteringCloner;
-    private int objectDepth = 10;
+    private ObjectFilter objectFilter;
     @Getter private final Object originalInstance;
     @Getter private Throttle throttle = null;
 
@@ -38,15 +34,8 @@ public class Recorder implements MethodInterceptor, Consumer<FluxSink<Recording>
         this.originalInstance = originalInstance;
     }
 
-    public Recorder filteringOut(Filter.Builder... filters) {
-        this.filters = Arrays.stream(filters).map(Filter.Builder::build).toArray(Filter[]::new);
-        this.filteringCloner = new FilteringCloner(this.objectDepth, this.filters);
-        return this;
-    }
-
-    public Recorder toDepth(int objectDepth) {
-        this.objectDepth = objectDepth;
-        this.filteringCloner = new FilteringCloner(objectDepth, this.filters);
+    public Recorder filteringWith(ObjectFilter filter) {
+        this.objectFilter = filter;
         return this;
     }
 
@@ -79,10 +68,10 @@ public class Recorder implements MethodInterceptor, Consumer<FluxSink<Recording>
         Object result = method.invoke(this.originalInstance, arguments);
         try {
             Recording recording = new Recording(this.originalInstance.getClass(), method,
-                                                this.filteringCloner.filterAsReferenceCopy(arguments),
-                                                this.filteringCloner.filterAsReferenceCopy(result),
-                                                this.filteringCloner.filterAsEvaluatedCopy(arguments),
-                                                this.filteringCloner.filterAsEvaluatedCopy(result));
+                                                this.objectFilter.filterAsReferenceCopy(arguments),
+                                                this.objectFilter.filterAsReferenceCopy(result),
+                                                this.objectFilter.filterAsEvaluatedCopy(arguments),
+                                                this.objectFilter.filterAsEvaluatedCopy(result));
             if(this.getThrottle() == null || !this.getThrottle().reject()) {
                 this.listeners.forEach(l -> l.next(recording));
             }

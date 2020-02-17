@@ -2,12 +2,10 @@ package org.shadow.invocation;
 
 import lombok.extern.slf4j.Slf4j;
 import org.junit.Test;
-import org.shadow.Bar;
-import org.shadow.Baz;
-import org.shadow.DefaultValue;
-import org.shadow.Foo;
-import org.shadow.field.Noise;
-import org.shadow.field.Secret;
+import org.shadow.*;
+import org.shadow.filtering.Noise;
+import org.shadow.filtering.ObjectFilter;
+import org.shadow.filtering.Secret;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -26,13 +24,14 @@ public class RecorderTest extends BaseTest {
         String name = new Object(){}.getClass().getEnclosingMethod().getName();
         log.info(name + " starting.");
         CompletableFuture<Recording> future = new CompletableFuture<>();
+        ObjectFilter filter = filter(
+                noise().from(Foo.class).where(named("timestamp")),
+                secrets().from(Foo.class).where(named("lastName")),
+                noise().from(Baz.class).where(named("id")),
+                secrets().from(Baz.class).where(named("salary"))
+        );
         Bar proxy = record(bar)
-                        .filteringOut(
-                                noise().from(Foo.class).where(named("timestamp")),
-                                secrets().from(Foo.class).where(named("lastName")),
-                                noise().from(Baz.class).where(named("id")),
-                                secrets().from(Baz.class).where(named("salary"))
-                        )
+                        .filteringWith(filter)
                         .savingTo(new ObserveOnlyRecord() {
                             @Override
                             public void put(List<Recording> recordings) {
@@ -78,13 +77,14 @@ public class RecorderTest extends BaseTest {
         String name = new Object(){}.getClass().getEnclosingMethod().getName();
         log.info(name + " starting.");
         CompletableFuture<Recording> future = new CompletableFuture<>();
+        ObjectFilter filter = filter(
+                noise().from(Foo.class).where(annotated(Noise.class)),
+                secrets().from(Foo.class).where(annotated(Secret.class)),
+                noise().from(Baz.class), // annotated is default predicate
+                secrets().from(Baz.class) // annotated is default predicate
+        );
         Bar proxy = record(bar)
-                .filteringOut(
-                        noise().from(Foo.class).where(annotated(Noise.class)),
-                        secrets().from(Foo.class).where(annotated(Secret.class)),
-                        noise().from(Baz.class), // annotated is default predicate
-                        secrets().from(Baz.class) // annotated is default predicate
-                )
+                .filteringWith(filter)
                 .savingTo(new ObserveOnlyRecord() {
                     @Override
                     public void put(List<Recording> recordings) {
@@ -129,13 +129,14 @@ public class RecorderTest extends BaseTest {
     public void testZeroPercentThrottling() throws TimeoutException, InterruptedException {
         String name = new Object(){}.getClass().getEnclosingMethod().getName();
         log.info(name + " starting.");
+        ObjectFilter filter = filter(
+                noise().from(Foo.class),
+                secrets().from(Foo.class),
+                noise().from(Baz.class),
+                secrets().from(Baz.class)
+        );
         Bar proxy = record(bar)
-                .filteringOut(
-                        noise().from(Foo.class),
-                        secrets().from(Foo.class),
-                        noise().from(Baz.class),
-                        secrets().from(Baz.class)
-                )
+                .filteringWith(filter)
                 .throttlingTo(
                         percent(1.0)
                 )
@@ -159,13 +160,14 @@ public class RecorderTest extends BaseTest {
     public void testOneHundredPercentThrottling() throws TimeoutException, InterruptedException {
         String name = new Object(){}.getClass().getEnclosingMethod().getName();
         log.info(name + " starting.");
+        ObjectFilter filter = filter(
+                noise().from(Foo.class),
+                secrets().from(Foo.class),
+                noise().from(Baz.class),
+                secrets().from(Baz.class)
+        );
         Bar proxy = record(bar)
-                .filteringOut(
-                        noise().from(Foo.class),
-                        secrets().from(Foo.class),
-                        noise().from(Baz.class),
-                        secrets().from(Baz.class)
-                )
+                .filteringWith(filter)
                 .throttlingTo(
                         percent(0.0)
                 )
@@ -187,13 +189,14 @@ public class RecorderTest extends BaseTest {
     public void testRateThrottling() throws InterruptedException, ExecutionException, TimeoutException {
         String name = new Object(){}.getClass().getEnclosingMethod().getName();
         log.info(name + " starting.");
+        ObjectFilter filter = filter(
+                noise().from(Foo.class),
+                secrets().from(Foo.class),
+                noise().from(Baz.class),
+                secrets().from(Baz.class)
+        );
         Bar proxy = record(bar)
-                .filteringOut(
-                        noise().from(Foo.class),
-                        secrets().from(Foo.class),
-                        noise().from(Baz.class),
-                        secrets().from(Baz.class)
-                )
+                .filteringWith(filter)
                 .throttlingTo(
                         rate(2).per(1L, TimeUnit.SECONDS)
                 )
