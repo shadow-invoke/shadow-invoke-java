@@ -20,7 +20,7 @@ public class Recording {
     private final Object[] evaluatedArguments;
     private final Object evaluatedResult;
 
-    public Recording(Object invocationTarget, Method invokedMethod, Object[] referenceArguments,
+    public Recording(Class<?> invocationTarget, Method invokedMethod, Object[] referenceArguments,
                      Object referenceResult, Object[] evaluatedArguments, Object evaluatedResult) {
         this.invocationKey = new InvocationKey(invokedMethod, invocationTarget, evaluatedArguments);
         this.referenceArguments = referenceArguments;
@@ -43,11 +43,11 @@ public class Recording {
     @EqualsAndHashCode(exclude = {"timestamp"})
     public static class InvocationKey {
         private final Method invokedMethod;
-        private final Object invocationTarget;
+        private final Class<?> invocationTarget;
         private final Object[] evaluatedArguments;
         private final Instant timestamp;
 
-        public InvocationKey(Method invokedMethod, Object invocationTarget, Object[] evaluatedArguments) {
+        public InvocationKey(Method invokedMethod, Class<?> invocationTarget, Object[] evaluatedArguments) {
             this.invocationTarget = invocationTarget;
             this.invokedMethod = invokedMethod;
             this.evaluatedArguments = evaluatedArguments;

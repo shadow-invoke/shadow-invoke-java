@@ -30,6 +30,7 @@ public class Recorder implements MethodInterceptor, Consumer<FluxSink<Recording>
     private Flux<Recording> flux;
     private Filter[] filters;
     private FilteringCloner filteringCloner;
+    private int objectDepth = 10;
     @Getter private final Object originalInstance;
     @Getter private Throttle throttle = null;
 
@@ -39,11 +40,12 @@ public class Recorder implements MethodInterceptor, Consumer<FluxSink<Recording>
 
     public Recorder filteringOut(Filter.Builder... filters) {
         this.filters = Arrays.stream(filters).map(Filter.Builder::build).toArray(Filter[]::new);
-        this.filteringCloner = new FilteringCloner(10, this.filters);
+        this.filteringCloner = new FilteringCloner(this.objectDepth, this.filters);
         return this;
     }
 
     public Recorder toDepth(int objectDepth) {
+        this.objectDepth = objectDepth;
         this.filteringCloner = new FilteringCloner(objectDepth, this.filters);
         return this;
     }
@@ -54,12 +56,11 @@ public class Recorder implements MethodInterceptor, Consumer<FluxSink<Recording>
     }
 
     public Recorder savingTo(Record record) {
-            this.flux = Flux.create(this, FluxSink.OverflowStrategy.DROP);
-            this.flux
-                    .publishOn(SCHEDULER)
-                    .subscribeOn(SCHEDULER)
-                    .buffer(record.getBatchSize())
-                    .subscribe(record);
+        this.flux = Flux.create(this, FluxSink.OverflowStrategy.DROP);
+        this.flux.publishOn(SCHEDULER)
+                 .subscribeOn(SCHEDULER)
+                 .buffer(record.getBatchSize())
+                 .subscribe(record);
         return this;
     }
 
@@ -77,7 +78,7 @@ public class Recorder implements MethodInterceptor, Consumer<FluxSink<Recording>
     public Object intercept(Object o, Method method, Object[] arguments, MethodProxy proxy) throws Throwable {
         Object result = method.invoke(this.originalInstance, arguments);
         try {
-            Recording recording = new Recording(this.originalInstance, method,
+            Recording recording = new Recording(this.originalInstance.getClass(), method,
                                                 this.filteringCloner.filterAsReferenceCopy(arguments),
                                                 this.filteringCloner.filterAsReferenceCopy(result),
                                                 this.filteringCloner.filterAsEvaluatedCopy(arguments),

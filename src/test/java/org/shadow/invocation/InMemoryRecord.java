@@ -27,6 +27,7 @@ public class InMemoryRecord extends Record {
         if(recordings != null && !recordings.isEmpty()) {
             for(Recording recording : recordings) {
                 String hash = generateHash(recording.getInvocationKey());
+                log.info(String.format("Storing object %s at key %s", recording, hash));
                 hashToRecordings.putIfAbsent(hash, new ArrayList<>());
                 hashToRecordings.get(hash).add(recording);
             }
@@ -38,7 +39,10 @@ public class InMemoryRecord extends Record {
 
     @Override
     public List<Recording> get(Recording.InvocationKey key) {
-        return hashToRecordings.get(generateHash(key));
+        String hash = generateHash(key);
+        List<Recording> recordings = hashToRecordings.get(hash);
+        log.info(String.format("Retrieving objects %s at key %s", recordings, hash));
+        return recordings;
     }
 
     @Override
@@ -78,7 +82,9 @@ public class InMemoryRecord extends Record {
             builder.append(obj.toString());
         }
         builder.append(',');
-        builder.append(key.getInvocationTarget().getClass().getCanonicalName());
-        return DigestUtils.sha256Hex(builder.toString());
+        builder.append(key.getInvocationTarget().getCanonicalName());
+        String hash = DigestUtils.sha256Hex(builder.toString());
+        log.info(String.format("Generated hash %s for key %s.", hash, key));
+        return hash;
     }
 }

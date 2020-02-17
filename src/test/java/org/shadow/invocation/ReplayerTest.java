@@ -26,10 +26,10 @@ public class ReplayerTest extends BaseTest {
         }).withBatchSize(1);
         Bar proxy = record(bar)
                 .filteringOut(
-                        noise().from(Foo.class),
-                        secrets().from(Foo.class),
-                        noise().from(Baz.class),
-                        secrets().from(Baz.class)
+                    noise().from(Foo.class),
+                    secrets().from(Foo.class),
+                    noise().from(Baz.class),
+                    secrets().from(Baz.class)
                 )
                 .savingTo(record)
                 .proxyingAs(Bar.class);
@@ -38,8 +38,17 @@ public class ReplayerTest extends BaseTest {
         await(5L, TimeUnit.SECONDS);
 
         Method method = Bar.class.getMethod("doSomethingShadowed", Foo.class);
-        Recording.InvocationKey key = new Recording.InvocationKey(method, bar, new Object[]{foo}, timestamp);
-        proxy = replay(Bar.class).retrievingFrom(record).atTime(timestamp).start();
+        Recording.InvocationKey key = new Recording.InvocationKey(method, Bar.class, new Object[]{foo}, timestamp);
+        proxy = replay(Bar.class)
+                    .filteringOut(
+                            noise().from(Foo.class),
+                            secrets().from(Foo.class),
+                            noise().from(Baz.class),
+                            secrets().from(Baz.class)
+                    )
+                    .retrievingFrom(record)
+                    .atTime(timestamp)
+                    .start();
         assertEquals(result, proxy.doSomethingShadowed(foo));
 
         log.info(name + " finishing.");
