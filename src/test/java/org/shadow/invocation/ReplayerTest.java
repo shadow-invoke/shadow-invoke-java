@@ -9,7 +9,6 @@ import org.shadow.Foo;
 import org.shadow.exception.ReplayException;
 import org.shadow.filtering.ObjectFilter;
 
-import java.lang.reflect.Method;
 import java.time.Instant;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
@@ -23,16 +22,19 @@ public class ReplayerTest extends BaseTest {
     public void testReplay() throws NoSuchMethodException, TimeoutException, InterruptedException, ReplayException {
         String name = new Object() {}.getClass().getEnclosingMethod().getName();
         log.info(name + " starting.");
+
         Record record = new InMemoryRecord(recordings -> {
             resume();
             return true;
         }).withBatchSize(1);
+
         ObjectFilter filter = filter(
                 noise().from(Foo.class),
                 secrets().from(Foo.class),
                 noise().from(Baz.class),
                 secrets().from(Baz.class)
         );
+
         Bar proxy = record(bar)
                 .filteringWith(filter)
                 .savingTo(record)
@@ -41,8 +43,6 @@ public class ReplayerTest extends BaseTest {
         Instant timestamp = Instant.now();
         await(5L, TimeUnit.SECONDS);
 
-        Method method = Bar.class.getMethod("doSomethingShadowed", Foo.class);
-        Recording.InvocationKey key = new Recording.InvocationKey(method, Bar.class, new Object[]{foo}, timestamp);
         proxy = replay(Bar.class)
                     .filteringWith(filter)
                     .retrievingFrom(record)

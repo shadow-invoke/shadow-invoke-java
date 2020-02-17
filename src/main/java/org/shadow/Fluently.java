@@ -33,10 +33,6 @@ public class Fluently {
         return new Rate(1).per(timeDuration, timeUnit);
     }
 
-    public static Throttle every(TimeUnit timeUnit) {
-        return every(1L, timeUnit);
-    }
-
     public static Predicate<Field> named(String... names) {
         return new NamesPredicate(names);
     }
