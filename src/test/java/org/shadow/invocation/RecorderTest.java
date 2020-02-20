@@ -186,7 +186,7 @@ public class RecorderTest extends BaseTest {
     }
 
     @Test
-    public void testRateThrottling() throws InterruptedException, ExecutionException, TimeoutException {
+    public void testRateThrottling() throws InterruptedException, TimeoutException {
         String name = new Object(){}.getClass().getEnclosingMethod().getName();
         log.info(name + " starting.");
         ObjectFilter filter = filter(

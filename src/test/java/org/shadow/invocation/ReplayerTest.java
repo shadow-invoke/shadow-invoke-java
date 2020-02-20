@@ -19,7 +19,7 @@ import static org.shadow.Fluently.*;
 @Slf4j
 public class ReplayerTest extends BaseTest {
     @Test
-    public void testReplay() throws NoSuchMethodException, TimeoutException, InterruptedException, ReplayException {
+    public void testReplay() throws TimeoutException, InterruptedException, ReplayException {
         String name = new Object() {}.getClass().getEnclosingMethod().getName();
         log.info(name + " starting.");
 

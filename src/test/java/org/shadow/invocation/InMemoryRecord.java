@@ -15,7 +15,7 @@ import java.util.function.Function;
  */
 @Slf4j
 public class InMemoryRecord extends Record {
-    private Map<String, List<Recording>> hashToRecordings = new HashMap<>();
+    private final Map<String, List<Recording>> hashToRecordings = new HashMap<>();
     private final Function<List<Recording>, Boolean> callback;
 
     public InMemoryRecord(Function<List<Recording>, Boolean> callback) {
