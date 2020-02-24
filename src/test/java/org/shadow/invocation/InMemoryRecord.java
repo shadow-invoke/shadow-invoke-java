@@ -1,13 +1,11 @@
 package org.shadow.invocation;
 
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.codec.digest.DigestUtils;
+import org.shadow.exception.RecordingException;
+import org.shadow.invocation.Recording.InvocationContext;
+import org.shadow.invocation.Recording.InvocationKey;
 
-import java.time.Duration;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.function.Function;
 
 /**
@@ -15,7 +13,8 @@ import java.util.function.Function;
  */
 @Slf4j
 public class InMemoryRecord extends Record {
-    private final Map<String, List<Recording>> hashToRecordings = new HashMap<>();
+    // Context GUID -> Key Hash -> Ordered Recordings
+    private final Map<String, Map<String, Queue<Recording>>> CONTEXT_TO_KEY_TO_RECORDINGS = new HashMap<>();
     private final Function<List<Recording>, Boolean> callback;
 
     public InMemoryRecord(Function<List<Recording>, Boolean> callback) {
@@ -23,13 +22,14 @@ public class InMemoryRecord extends Record {
     }
 
     @Override
-    public void put(List<Recording> recordings) {
+    public void put(List<Recording> recordings) throws RecordingException {
         if(recordings != null && !recordings.isEmpty()) {
             for(Recording recording : recordings) {
-                String hash = generateHash(recording.getInvocationKey());
-                log.info(String.format("Storing object %s at key %s", recording, hash));
-                hashToRecordings.putIfAbsent(hash, new ArrayList<>());
-                hashToRecordings.get(hash).add(recording);
+                String contextGuid = recording.getInvocationContext().getContextId();
+                String keyHash = recording.getInvocationKey().generateHash();
+                CONTEXT_TO_KEY_TO_RECORDINGS.putIfAbsent(contextGuid, new HashMap<>());
+                CONTEXT_TO_KEY_TO_RECORDINGS.get(contextGuid).putIfAbsent(keyHash, new LinkedList<>());
+                CONTEXT_TO_KEY_TO_RECORDINGS.get(contextGuid).get(keyHash).offer(recording);
             }
         }
         if(this.callback != null) {
@@ -38,53 +38,18 @@ public class InMemoryRecord extends Record {
     }
 
     @Override
-    public List<Recording> get(Recording.InvocationKey key) {
-        String hash = generateHash(key);
-        List<Recording> recordings = hashToRecordings.get(hash);
-        log.info(String.format("Retrieving objects %s at key %s", recordings, hash));
-        return recordings;
-    }
-
-    @Override
-    public Recording getNearest(Recording.InvocationKey key) {
-        if(key == null || key.getTimestamp() == null) {
-            log.error("Null key or call timestamp.");
-            return null;
+    public Recording get(InvocationKey key, InvocationContext context) throws RecordingException {
+        if(key == null || context == null) {
+            String msg = String.format("Bad context (%s) or key (%s)", key, context);
+            throw new RecordingException(msg);
         }
-        List<Recording> recordings = this.get(key);
-        Recording nearest = null;
-        if(recordings != null && !recordings.isEmpty()) {
-            Duration min = Duration.ofSeconds(Long.MAX_VALUE, 999_999_999);
-            for(Recording recording : recordings) {
-                if(recording.getInvocationKey().getTimestamp() != null) {
-                    Duration diff = Duration.between(recording.getInvocationKey().getTimestamp(), key.getTimestamp());
-                    if(diff.isNegative() || diff.isZero()) { // looking for the nearest recording occurring before the call timestamp
-                        diff = diff.abs();
-                        if (diff.compareTo(min) <= 0) {
-                            min = diff;
-                            nearest = recording;
-                        }
-                    }
-                }
-            }
+        String contextGuid = context.getContextId();
+        String keyHash = key.generateHash();
+        if(CONTEXT_TO_KEY_TO_RECORDINGS.containsKey(contextGuid) &&
+           CONTEXT_TO_KEY_TO_RECORDINGS.get(contextGuid).containsKey(keyHash)) {
+            // Pops it off the queue and returns. Next call will get next instance.
+            return CONTEXT_TO_KEY_TO_RECORDINGS.get(contextGuid).get(keyHash).poll();
         }
-        return nearest;
-    }
-
-    /**
-     * Generate a unique key from the SHA256 hash of all invocation key fields except for the timestamp.
-     */
-    public static String generateHash(Recording.InvocationKey key) {
-        StringBuilder builder = new StringBuilder();
-        builder.append(key.getInvokedMethod().getName());
-        builder.append(',');
-        for(Object obj : key.getEvaluatedArguments()) {
-            builder.append(obj.toString());
-        }
-        builder.append(',');
-        builder.append(key.getInvocationTarget().getCanonicalName());
-        String hash = DigestUtils.sha256Hex(builder.toString());
-        log.info(String.format("Generated hash %s for key %s.", hash, key));
-        return hash;
+        return null;
     }
 }

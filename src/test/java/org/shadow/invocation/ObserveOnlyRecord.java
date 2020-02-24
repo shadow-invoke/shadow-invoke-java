@@ -1,15 +1,11 @@
 package org.shadow.invocation;
 
-import java.util.List;
+import org.shadow.invocation.Recording.InvocationContext;
+import org.shadow.invocation.Recording.InvocationKey;
 
 public abstract class ObserveOnlyRecord extends Record {
     @Override
-    public List<Recording> get(Recording.InvocationKey key) {
-        return null;
-    }
-
-    @Override
-    public Recording getNearest(Recording.InvocationKey key) {
+    public Recording get(InvocationKey key, InvocationContext context) {
         return null;
     }
 }

@@ -8,12 +8,11 @@ import org.shadow.exception.ReplayException;
 import org.shadow.filtering.ObjectFilter;
 
 import java.lang.reflect.Method;
-import java.time.Instant;
 
 @Slf4j
 public class Replayer <T> implements MethodInterceptor {
     private final Class<T> cls;
-    private Instant timestamp = null;
+    private String contextId = null;
     private Record record = null;
     private ObjectFilter objectFilter;
 
@@ -31,8 +30,8 @@ public class Replayer <T> implements MethodInterceptor {
         return this;
     }
 
-    public T startingAt(Instant timestamp) throws ReplayException {
-        this.timestamp = timestamp;
+    public T forContextId(String contextId) throws ReplayException {
+        this.contextId = contextId;
         if(this.cls == null) {
             throw new ReplayException("Replayer created with null class.");
         }
@@ -42,22 +41,24 @@ public class Replayer <T> implements MethodInterceptor {
         if(this.objectFilter == null) {
             throw new ReplayException("Replayer started with null filter.");
         }
-        if(this.timestamp == null) {
-            log.warn("Replayer started with null timestamp. Defaulting to now.");
-            this.timestamp = Instant.now();
+        if(this.contextId == null) {
+            throw new ReplayException("Replayer started with null context ID.");
         }
         return (T) Enhancer.create(this.cls, this);
     }
 
     @Override
     public Object intercept(Object obj, Method method, Object[] args, MethodProxy proxy) throws Throwable {
-        Recording.InvocationKey key = new Recording.InvocationKey(
-                method,
-                this.cls,
-                this.objectFilter.filterAsEvaluatedCopy(args),
-                this.timestamp
-        );
-        Recording recording = this.record.getNearest(key);
-        return (recording != null)? recording.getReferenceResult() : null;
+        // Top-level caller is responsible for setting a context for replays.
+        // To this end, it will receive a GUID in the shadowing request.
+        try(Recording.InvocationContext context = new Recording.InvocationContext(this.contextId)) {
+            Recording.InvocationKey key = new Recording.InvocationKey(
+                    method,
+                    this.cls,
+                    this.objectFilter.filterAsEvaluatedCopy(args)
+            );
+            Recording recording = this.record.get(key, context);
+            return (recording != null) ? recording.getReferenceResult() : null;
+        }
     }
 }

@@ -13,7 +13,6 @@ import reactor.core.scheduler.Scheduler;
 import reactor.core.scheduler.Schedulers;
 
 import java.lang.reflect.Method;
-import java.time.Instant;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.Executors;
@@ -26,6 +25,7 @@ public class Recorder implements MethodInterceptor, Consumer<FluxSink<Recording>
             Executors.newScheduledThreadPool(Runtime.getRuntime().availableProcessors());
     private static final Scheduler SCHEDULER = Schedulers.fromExecutorService(THREAD_POOL);
     private final Set<FluxSink<Recording>> listeners = new HashSet<>();
+    private final boolean isShadowing;
     private Flux<Recording> flux;
     private ObjectFilter objectFilter;
     @Getter private final Object originalInstance;
@@ -33,6 +33,12 @@ public class Recorder implements MethodInterceptor, Consumer<FluxSink<Recording>
 
     public Recorder(Object originalInstance) {
         this.originalInstance = originalInstance;
+        this.isShadowing = false;
+    }
+
+    public Recorder(Object originalInstance, boolean isShadowing) {
+        this.originalInstance = originalInstance;
+        this.isShadowing = isShadowing;
     }
 
     public Recorder filteringWith(ObjectFilter filter) {
@@ -66,13 +72,12 @@ public class Recorder implements MethodInterceptor, Consumer<FluxSink<Recording>
 
     @Override
     public Object intercept(Object o, Method method, Object[] arguments, MethodProxy proxy) throws Throwable {
-        Instant calledAt = Instant.now();
-        Object result = method.invoke(this.originalInstance, arguments);
-        try {
+        Object result = method.invoke(this.originalInstance, arguments); // TODO: How to replay exceptions?
+        try(Recording.InvocationContext context = new Recording.InvocationContext()) {
             Recording recording = new Recording(
-                    this.originalInstance.getClass(), method, this.objectFilter.filterAsReferenceCopy(arguments),
+                    this.originalInstance.getClass(), method, context, this.objectFilter.filterAsReferenceCopy(arguments),
                     this.objectFilter.filterAsReferenceCopy(result), this.objectFilter.filterAsEvaluatedCopy(arguments),
-                    this.objectFilter.filterAsEvaluatedCopy(result), calledAt
+                    this.objectFilter.filterAsEvaluatedCopy(result)
             );
             if(this.getThrottle() == null || !this.getThrottle().reject()) {
                 this.listeners.forEach(l -> l.next(recording));

@@ -4,6 +4,9 @@ import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.reactivestreams.Subscriber;
 import org.reactivestreams.Subscription;
+import org.shadow.exception.RecordingException;
+import org.shadow.invocation.Recording.InvocationContext;
+import org.shadow.invocation.Recording.InvocationKey;
 
 import java.util.List;
 
@@ -15,16 +18,9 @@ public abstract class Record implements Subscriber<List<Recording>> {
     private Subscription subscription = null;
     @Getter private int batchSize = 1;
 
-    public abstract void put(List<Recording> recordings);
+    public abstract void put(List<Recording> recordings) throws RecordingException;
 
-    public abstract List<Recording> get(Recording.InvocationKey key);
-
-    /***
-     * Get a recording matching the key which is nearest the timestamp in the key (can be before or after).
-     * @param key The key of the recording, with call timestamp.
-     * @return A recording matching the given key, or null if none found.
-     */
-    public abstract Recording getNearest(Recording.InvocationKey key);
+    public abstract Recording get(InvocationKey key, InvocationContext context) throws RecordingException;
 
     public Record withBatchSize(int size) {
         this.batchSize = size;
@@ -44,7 +40,11 @@ public abstract class Record implements Subscriber<List<Recording>> {
 
     @Override
     public void onNext(List<Recording> recordings) {
-        this.put(recordings);
+        try {
+            this.put(recordings);
+        } catch (RecordingException e) {
+            log.error(String.format("While calling put() on %s", recordings), e);
+        }
         this.subscription.request(this.batchSize + 1);
     }
 
