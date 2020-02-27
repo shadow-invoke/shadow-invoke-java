@@ -9,7 +9,6 @@ import org.shadow.Foo;
 import org.shadow.exception.ReplayException;
 import org.shadow.filtering.ObjectFilter;
 
-import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
@@ -48,7 +47,6 @@ public class ReplayerTest extends BaseTest {
                 .savingTo(record)
                 .proxyingAs(Bar.class);
         // TODO: How does client signal to service that this recording is a shadowed call to be evaluated against a candidate?
-        Instant timestamp = Instant.now();
         assertEquals(result, proxy.doSomethingShadowed(foo));
         await(5L, TimeUnit.SECONDS);
 

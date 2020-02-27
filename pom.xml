@@ -6,7 +6,7 @@
 
   <groupId>org.shadow-invoke</groupId>
   <artifactId>shadow-invoke-java</artifactId>
-  <version>0.1.0</version>
+  <version>0.2.0</version>
 
   <name>shadow-invoke-java</name>
   <url>https://github.com/jasondemorrow/shadow-invoke-java</url>
