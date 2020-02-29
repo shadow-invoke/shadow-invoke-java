@@ -25,7 +25,6 @@ public class Recorder implements MethodInterceptor, Consumer<FluxSink<Recording>
             Executors.newScheduledThreadPool(Runtime.getRuntime().availableProcessors());
     private static final Scheduler SCHEDULER = Schedulers.fromExecutorService(THREAD_POOL);
     private final Set<FluxSink<Recording>> listeners = new HashSet<>();
-    private final boolean isShadowing;
     private Flux<Recording> flux;
     private ObjectFilter objectFilter;
     @Getter private final Object originalInstance;
@@ -33,12 +32,6 @@ public class Recorder implements MethodInterceptor, Consumer<FluxSink<Recording>
 
     public Recorder(Object originalInstance) {
         this.originalInstance = originalInstance;
-        this.isShadowing = false;
-    }
-
-    public Recorder(Object originalInstance, boolean isShadowing) {
-        this.originalInstance = originalInstance;
-        this.isShadowing = isShadowing;
     }
 
     public Recorder filteringWith(ObjectFilter filter) {

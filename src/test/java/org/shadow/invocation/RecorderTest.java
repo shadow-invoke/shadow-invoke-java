@@ -218,4 +218,31 @@ public class RecorderTest extends BaseTest {
         await(5, TimeUnit.SECONDS, 1);
         log.info(name + " finishing.");
     }
+
+    @Test
+    public void testNullClassYieldsNullProxy() {
+        String name = new Object(){}.getClass().getEnclosingMethod().getName();
+        log.info(name + " starting.");
+        ObjectFilter filter = filter(
+                noise().from(Foo.class),
+                secrets().from(Foo.class),
+                noise().from(Baz.class),
+                secrets().from(Baz.class)
+        );
+        Bar proxy = record(bar)
+                .filteringWith(filter)
+                .throttlingTo(
+                        rate(2).per(1L, TimeUnit.SECONDS)
+                )
+                .savingTo(new ObserveOnlyRecord() {
+                    @Override
+                    public void put(List<Recording> recordings) {
+                        log.info(name + ": got batch of size " + recordings.size());
+                        threadAssertEquals(4, recordings.size());
+                        resume();
+                    }
+                }.withBatchSize(4))
+                .proxyingAs(null);
+        assertNull(proxy);
+    }
 }
