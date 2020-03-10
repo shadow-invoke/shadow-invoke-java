@@ -47,16 +47,6 @@ public class Conversion<FC, TC> {
                     log.warn(String.format("Bad from class (%s) or to class (%s), returning null conversion.", this.from, this.to));
                     return null;
                 }
-                Class<? super FF> converterFrom = converter.getFromTypeToken().getRawType();
-                if(!this.from.equals(converterFrom)) {
-                    log.warn(String.format("Mismatched 'from' class between builder (%s) and converter (%s), returning null conversion.", this.from, converterFrom));
-                    return null;
-                }
-                Class<? super TF> converterTo = converter.getToTypeToken().getRawType();
-                if(!this.to.equals(converterTo)) {
-                    log.warn(String.format("Mismatched 'to' class between builder (%s) and converter (%s), returning null conversion.", this.to, converterTo));
-                    return null;
-                }
                 return new Conversion<>(this.from, this.to, converter);
             }
         }
