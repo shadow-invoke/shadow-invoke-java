@@ -1,6 +1,7 @@
 package org.shadow;
 
 import lombok.experimental.UtilityClass;
+import org.shadow.converting.Conversion;
 import org.shadow.filtering.FieldFilter;
 import org.shadow.filtering.Noise;
 import org.shadow.filtering.ObjectFilter;
@@ -86,4 +87,16 @@ public class Fluently {
     public static <T> Replayer<T> replay(Class<T> cls) {
         return new Replayer<>(cls);
     }
+
+    public static <T> Conversion.Builder.Initial<T> from(Class<T> from) {
+        return new Conversion.Builder.Initial<T>(from);
+    }
+
+    // replay(Foo.class)
+    //      .performingConversions(
+    //              from(Bar.class).to(Baz.class).with(orikaMapperFacade),
+    //              from(Thing.class).to(Something.class).with(mapStructMapper)
+    //      )
+
+    // Recorder recorder = new RemoteRecorder().withBatchSize(10).performingConversions(...)
 }
