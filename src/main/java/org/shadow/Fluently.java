@@ -89,7 +89,7 @@ public class Fluently {
     }
 
     public static <T> Conversion.Builder.Initial<T> from(Class<T> from) {
-        return new Conversion.Builder.Initial<T>(from);
+        return new Conversion.Builder.Initial<>(from);
     }
 
     // replay(Foo.class)
@@ -97,6 +97,4 @@ public class Fluently {
     //              from(Bar.class).to(Baz.class).with(orikaMapperFacade),
     //              from(Thing.class).to(Something.class).with(mapStructMapper)
     //      )
-
-    // Recorder recorder = new RemoteRecorder().withBatchSize(10).performingConversions(...)
 }
