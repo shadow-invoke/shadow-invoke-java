@@ -1,9 +1,13 @@
-package io.shadowstack.incumbents;
+package io.shadowstack;
 
 import io.shadowstack.candidates.InvocationSource;
 import io.shadowstack.exceptions.InvocationKeyException;
 import io.shadowstack.exceptions.InvocationSinkException;
 import io.shadowstack.exceptions.InvocationSourceException;
+import io.shadowstack.incumbents.Invocation;
+import io.shadowstack.incumbents.InvocationContext;
+import io.shadowstack.incumbents.InvocationKey;
+import io.shadowstack.incumbents.InvocationSink;
 import lombok.extern.slf4j.Slf4j;
 
 import java.util.*;

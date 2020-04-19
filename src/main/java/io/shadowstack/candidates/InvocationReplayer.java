@@ -61,6 +61,7 @@ public class InvocationReplayer<T> implements MethodInterceptor {
                     this.objectFilter.filterAsEvaluatedCopy(args)
             );
             Invocation invocation = this.invocationSource.retrieve(key, context);
+            // Using reference result here since replay should be as close to original as possible
             return (invocation != null) ? invocation.getReferenceResult() : null;
         }
     }

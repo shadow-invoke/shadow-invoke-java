@@ -1,12 +1,8 @@
-package io.shadowstack.incumbents;
+package io.shadowstack.candidates;
 
-import io.shadowstack.Fluently;
+import io.shadowstack.*;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.Test;
-import io.shadowstack.Bar;
-import io.shadowstack.BaseTest;
-import io.shadowstack.Baz;
-import io.shadowstack.Foo;
 import io.shadowstack.exceptions.InvocationReplayerException;
 import io.shadowstack.filters.ObjectFilter;
 

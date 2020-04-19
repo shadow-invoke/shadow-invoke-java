@@ -2,7 +2,6 @@ package io.shadowstack;
 
 import io.shadowstack.candidates.InvocationReplayer;
 import lombok.experimental.UtilityClass;
-import io.shadowstack.converters.Conversion;
 import io.shadowstack.filters.FieldFilter;
 import io.shadowstack.filters.Noise;
 import io.shadowstack.filters.ObjectFilter;
@@ -87,14 +86,4 @@ public class Fluently {
     public static <T> InvocationReplayer<T> replay(Class<T> cls) {
         return new InvocationReplayer<>(cls);
     }
-
-    public static <T> Conversion.Builder.Initial<T> from(Class<T> from) {
-        return new Conversion.Builder.Initial<>(from);
-    }
-
-    // replay(Foo.class)
-    //      .performingConversions(
-    //              from(Bar.class).to(Baz.class).with(orikaMapperFacade),
-    //              from(Thing.class).to(Something.class).with(mapStructMapper)
-    //      )
 }
