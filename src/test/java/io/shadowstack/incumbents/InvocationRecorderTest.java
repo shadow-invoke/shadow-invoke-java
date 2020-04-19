@@ -33,7 +33,7 @@ public class InvocationRecorderTest extends BaseTest {
                         .filteringWith(filter)
                         .savingTo(new ObserveOnlyInvocationSink() {
                             @Override
-                            public void put(List<Invocation> recordings) {
+                            public void record(List<Invocation> recordings) {
                                 Invocation invocation = recordings.get(0);
                                 log.info(name + ": got incumbents " + invocation);
                                 future.complete(invocation);
@@ -86,7 +86,7 @@ public class InvocationRecorderTest extends BaseTest {
                 .filteringWith(filter)
                 .savingTo(new ObserveOnlyInvocationSink() {
                     @Override
-                    public void put(List<Invocation> recordings) {
+                    public void record(List<Invocation> recordings) {
                         Invocation invocation = recordings.get(0);
                         log.info(name + ": got incumbents " + invocation.toString());
                         future.complete(invocation);
@@ -141,7 +141,7 @@ public class InvocationRecorderTest extends BaseTest {
                 )
                 .savingTo(new ObserveOnlyInvocationSink() {
                     @Override
-                    public void put(List<Invocation> recordings) {
+                    public void record(List<Invocation> recordings) {
                         log.info(name + ": got batch of size " + recordings.size());
                         threadAssertEquals(20, recordings.size());
                         resume();
@@ -172,7 +172,7 @@ public class InvocationRecorderTest extends BaseTest {
                 )
                 .savingTo(new ObserveOnlyInvocationSink() {
                     @Override
-                    public void put(List<Invocation> recordings) {
+                    public void record(List<Invocation> recordings) {
                         fail("Transmit should never have been called.");
                         resume();
                     }
@@ -201,7 +201,7 @@ public class InvocationRecorderTest extends BaseTest {
                 )
                 .savingTo(new ObserveOnlyInvocationSink() {
                     @Override
-                    public void put(List<Invocation> recordings) {
+                    public void record(List<Invocation> recordings) {
                         log.info(name + ": got batch of size " + recordings.size());
                         threadAssertEquals(4, recordings.size());
                         resume();
@@ -235,7 +235,7 @@ public class InvocationRecorderTest extends BaseTest {
                 )
                 .savingTo(new ObserveOnlyInvocationSink() {
                     @Override
-                    public void put(List<Invocation> recordings) {
+                    public void record(List<Invocation> recordings) {
                         log.info(name + ": got batch of size " + recordings.size());
                         threadAssertEquals(4, recordings.size());
                         resume();

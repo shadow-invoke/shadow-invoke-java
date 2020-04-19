@@ -16,9 +16,11 @@ public abstract class InvocationSink implements Subscriber<List<Invocation>> {
     private Subscription subscription = null;
     @Getter private int batchSize = 1;
 
-    public abstract void put(List<Invocation> invocations) throws InvocationSinkException;
+    public abstract void shadow(List<Invocation> invocations) throws InvocationSinkException;
 
-    public abstract Invocation get(InvocationKey key, InvocationContext context) throws InvocationSinkException;
+    public abstract void record(List<Invocation> invocations) throws InvocationSinkException;
+
+    public abstract Invocation replay(InvocationKey key, InvocationContext context) throws InvocationSinkException;
 
     public InvocationSink withBatchSize(int size) {
         this.batchSize = size;
@@ -39,7 +41,7 @@ public abstract class InvocationSink implements Subscriber<List<Invocation>> {
     @Override
     public void onNext(List<Invocation> invocations) {
         try {
-            this.put(invocations);
+            this.record(invocations);
         } catch (InvocationSinkException e) {
             log.error(String.format("While calling put() on %s", invocations), e);
         }

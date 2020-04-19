@@ -43,17 +43,16 @@ public class InvocationReplayerTest extends BaseTest {
         );
 
         Bar proxy = Fluently.record(bar)
-                .filteringWith(filter)
-                .savingTo(invocationSink)
-                .proxyingAs(Bar.class);
-        // TODO: How does client signal to service that this recording is a shadowed call to be evaluated against a candidate?
+                            .filteringWith(filter)
+                            .savingTo(invocationSink)
+                            .proxyingAs(Bar.class);
         assertEquals(result, proxy.doSomethingShadowed(foo));
         await(5L, TimeUnit.SECONDS);
 
         proxy = Fluently.replay(Bar.class)
-                .filteringWith(filter)
-                .retrievingFrom(invocationSink)
-                .forContextId(contextIds.get(0));
+                        .filteringWith(filter)
+                        .retrievingFrom(invocationSink)
+                        .forContextId(contextIds.get(0));
         // TODO: Where does context ID come from in a replay? Candidate service receives ReplayRequest instead of usual input?
         assertEquals(result, proxy.doSomethingShadowed(foo));
         log.info(name + " finishing.");

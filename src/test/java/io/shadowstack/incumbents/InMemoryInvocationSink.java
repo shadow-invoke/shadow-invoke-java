@@ -21,7 +21,12 @@ public class InMemoryInvocationSink extends InvocationSink {
     }
 
     @Override
-    public void put(List<Invocation> invocations) throws InvocationSinkException {
+    public void shadow(List<Invocation> invocations) throws InvocationSinkException {
+        throw new InvocationSinkException("Not implemented");
+    }
+
+    @Override
+    public void record(List<Invocation> invocations) throws InvocationSinkException {
         if(invocations != null && !invocations.isEmpty()) {
             for(Invocation invocation : invocations) {
                 String contextGuid = invocation.getInvocationContext().getContextId();
@@ -42,7 +47,7 @@ public class InMemoryInvocationSink extends InvocationSink {
     }
 
     @Override
-    public Invocation get(InvocationKey key, InvocationContext context) throws InvocationSinkException {
+    public Invocation replay(InvocationKey key, InvocationContext context) throws InvocationSinkException {
         if(key == null || context == null) {
             String msg = String.format("Bad context (%s) or key (%s)", key, context);
             throw new InvocationSinkException(msg);

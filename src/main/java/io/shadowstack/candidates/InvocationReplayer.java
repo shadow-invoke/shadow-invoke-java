@@ -61,7 +61,7 @@ public class InvocationReplayer<T> implements MethodInterceptor {
                     this.cls,
                     this.objectFilter.filterAsEvaluatedCopy(args)
             );
-            Invocation invocation = this.invocationSink.get(key, context);
+            Invocation invocation = this.invocationSink.replay(key, context);
             return (invocation != null) ? invocation.getReferenceResult() : null;
         }
     }
