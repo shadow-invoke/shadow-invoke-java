@@ -1,6 +1,5 @@
 package io.shadowstack.converters;
 
-import io.shadowstack.Fluently;
 import ma.glasnost.orika.BoundMapperFacade;
 import ma.glasnost.orika.MapperFactory;
 import ma.glasnost.orika.impl.DefaultMapperFactory;
@@ -8,6 +7,8 @@ import org.apache.commons.lang3.StringUtils;
 import org.junit.Test;
 import io.shadowstack.BaseTest;
 import io.shadowstack.Foo;
+
+import static io.shadowstack.Fluently.*;
 
 public class ConversionTest extends BaseTest {
     @Test
@@ -19,7 +20,7 @@ public class ConversionTest extends BaseTest {
                 .byDefault()
                 .register();
         BoundMapperFacade<Foo, Foo2> orikaMapper = mapperFactory.getMapperFacade(Foo.class, Foo2.class);
-        Conversion<Foo, Foo2> conversion = Fluently.from(Foo.class).to(Foo2.class).with(new OrikaConverter<>(orikaMapper));
+        Conversion<Foo, Foo2> conversion = from(Foo.class).to(Foo2.class).with(new OrikaConverter<>(orikaMapper));
         Foo2 f2 = conversion.convert(this.foo);
         threadAssertEquals(f2.getAge(), this.foo.getAge());
         threadAssertEquals(f2.getFirst(), this.foo.getFirstName());
@@ -34,7 +35,7 @@ public class ConversionTest extends BaseTest {
 
     @Test
     public void testMapStructConverter() {
-        Conversion<Foo, Foo2> conversion = Fluently.from(Foo.class).to(Foo2.class).with(MapStructConverter.INSTANCE);
+        Conversion<Foo, Foo2> conversion = from(Foo.class).to(Foo2.class).with(MapStructConverter.INSTANCE);
         Foo2 f2 = conversion.convert(this.foo);
         threadAssertEquals(f2.getAge(), this.foo.getAge());
         threadAssertEquals(f2.getFirst(), this.foo.getFirstName());

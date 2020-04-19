@@ -1,7 +1,9 @@
 package io.shadowstack.incumbents;
 
+import io.shadowstack.candidates.InvocationSource;
 import io.shadowstack.exceptions.InvocationKeyException;
 import io.shadowstack.exceptions.InvocationSinkException;
+import io.shadowstack.exceptions.InvocationSourceException;
 import lombok.extern.slf4j.Slf4j;
 
 import java.util.*;
@@ -11,12 +13,12 @@ import java.util.function.Function;
  * A InvocationSink for unit testing that saves to an in-memory cache.
  */
 @Slf4j
-public class InMemoryInvocationSink extends InvocationSink {
+public class InMemoryInvocationStore extends InvocationSink implements InvocationSource {
     // Context GUID -> Key Hash -> Ordered Recordings
     private final Map<String, Map<String, Queue<Invocation>>> CONTEXT_TO_KEY_TO_RECORDINGS = new HashMap<>();
     private final Function<List<Invocation>, Boolean> callback;
 
-    public InMemoryInvocationSink(Function<List<Invocation>, Boolean> callback) {
+    public InMemoryInvocationStore(Function<List<Invocation>, Boolean> callback) {
         this.callback = callback;
     }
 
@@ -47,17 +49,17 @@ public class InMemoryInvocationSink extends InvocationSink {
     }
 
     @Override
-    public Invocation replay(InvocationKey key, InvocationContext context) throws InvocationSinkException {
+    public Invocation retrieve(InvocationKey key, InvocationContext context) throws InvocationSourceException {
         if(key == null || context == null) {
             String msg = String.format("Bad context (%s) or key (%s)", key, context);
-            throw new InvocationSinkException(msg);
+            throw new InvocationSourceException(msg);
         }
         String contextGuid = context.getContextId();
         String keyHash = null;
         try {
             keyHash = key.generateHash();
         } catch (InvocationKeyException e) {
-            throw new InvocationSinkException(e);
+            throw new InvocationSourceException(e);
         }
         if(CONTEXT_TO_KEY_TO_RECORDINGS.containsKey(contextGuid) &&
            CONTEXT_TO_KEY_TO_RECORDINGS.get(contextGuid).containsKey(keyHash)) {

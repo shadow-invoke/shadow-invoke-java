@@ -20,8 +20,6 @@ public abstract class InvocationSink implements Subscriber<List<Invocation>> {
 
     public abstract void record(List<Invocation> invocations) throws InvocationSinkException;
 
-    public abstract Invocation replay(InvocationKey key, InvocationContext context) throws InvocationSinkException;
-
     public InvocationSink withBatchSize(int size) {
         this.batchSize = size;
         if(this.batchSize < 1) {

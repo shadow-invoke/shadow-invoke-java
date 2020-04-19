@@ -3,7 +3,6 @@ package io.shadowstack.candidates;
 import io.shadowstack.incumbents.Invocation;
 import io.shadowstack.incumbents.InvocationContext;
 import io.shadowstack.incumbents.InvocationKey;
-import io.shadowstack.incumbents.InvocationSink;
 import lombok.extern.slf4j.Slf4j;
 import net.sf.cglib.proxy.Enhancer;
 import net.sf.cglib.proxy.MethodInterceptor;
@@ -17,7 +16,7 @@ import java.lang.reflect.Method;
 public class InvocationReplayer<T> implements MethodInterceptor {
     private final Class<T> cls;
     private String contextId = null;
-    private InvocationSink invocationSink = null;
+    private InvocationSource invocationSource = null;
     private ObjectFilter objectFilter;
 
     public InvocationReplayer(Class<T> cls) {
@@ -29,8 +28,8 @@ public class InvocationReplayer<T> implements MethodInterceptor {
         return this;
     }
 
-    public InvocationReplayer<T> retrievingFrom(InvocationSink invocationSink) {
-        this.invocationSink = invocationSink;
+    public InvocationReplayer<T> retrievingFrom(InvocationSource invocationSource) {
+        this.invocationSource = invocationSource;
         return this;
     }
 
@@ -39,8 +38,8 @@ public class InvocationReplayer<T> implements MethodInterceptor {
         if(this.cls == null) {
             throw new InvocationReplayerException("InvocationReplayer created with null class.");
         }
-        if(this.invocationSink == null) {
-            throw new InvocationReplayerException("InvocationReplayer started with null invocationSink.");
+        if(this.invocationSource == null) {
+            throw new InvocationReplayerException("InvocationReplayer started with null invocationSource.");
         }
         if(this.objectFilter == null) {
             throw new InvocationReplayerException("InvocationReplayer started with null filter.");
@@ -61,7 +60,7 @@ public class InvocationReplayer<T> implements MethodInterceptor {
                     this.cls,
                     this.objectFilter.filterAsEvaluatedCopy(args)
             );
-            Invocation invocation = this.invocationSink.replay(key, context);
+            Invocation invocation = this.invocationSource.retrieve(key, context);
             return (invocation != null) ? invocation.getReferenceResult() : null;
         }
     }
