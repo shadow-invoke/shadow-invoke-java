@@ -4,8 +4,8 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.ToString;
-import io.shadowstack.filtering.Noise;
-import io.shadowstack.filtering.Secret;
+import io.shadowstack.filters.Noise;
+import io.shadowstack.filters.Secret;
 
 import java.time.LocalDateTime;
 

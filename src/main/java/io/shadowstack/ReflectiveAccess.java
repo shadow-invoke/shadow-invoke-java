@@ -12,7 +12,7 @@ public class ReflectiveAccess {
         try {
             field.set(parent, member);
         } catch (IllegalAccessException e) {
-            String message = "While setting filtering %s of %s";
+            String message = "While setting filters %s of %s";
             log.error(String.format(message, field.getName(), parent.getClass().getSimpleName()), e);
         }
     }
@@ -21,7 +21,7 @@ public class ReflectiveAccess {
         try {
             return field.get(parent);
         } catch (IllegalAccessException e) {
-            String message = "While getting filtering %s of %s";
+            String message = "While getting filters %s of %s";
             log.error(String.format(message, field.getName(), parent.getClass().getSimpleName()), e);
         }
         return null;

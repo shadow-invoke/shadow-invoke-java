@@ -1,16 +1,16 @@
 package io.shadowstack;
 
+import io.shadowstack.candidates.InvocationReplayer;
 import lombok.experimental.UtilityClass;
-import io.shadowstack.converting.Conversion;
-import io.shadowstack.filtering.FieldFilter;
-import io.shadowstack.filtering.Noise;
-import io.shadowstack.filtering.ObjectFilter;
-import io.shadowstack.filtering.Secret;
-import io.shadowstack.invocation.Recorder;
-import io.shadowstack.invocation.Replayer;
-import io.shadowstack.throttling.Percentage;
-import io.shadowstack.throttling.Rate;
-import io.shadowstack.throttling.Throttle;
+import io.shadowstack.converters.Conversion;
+import io.shadowstack.filters.FieldFilter;
+import io.shadowstack.filters.Noise;
+import io.shadowstack.filters.ObjectFilter;
+import io.shadowstack.filters.Secret;
+import io.shadowstack.incumbents.InvocationRecorder;
+import io.shadowstack.throttles.Percentage;
+import io.shadowstack.throttles.Rate;
+import io.shadowstack.throttles.Throttle;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Field;
@@ -80,12 +80,12 @@ public class Fluently {
         ).where(annotated(Secret.class));
     }
 
-    public static Recorder record(Object target) {
-        return new Recorder(target);
+    public static InvocationRecorder record(Object target) {
+        return new InvocationRecorder(target);
     }
 
-    public static <T> Replayer<T> replay(Class<T> cls) {
-        return new Replayer<>(cls);
+    public static <T> InvocationReplayer<T> replay(Class<T> cls) {
+        return new InvocationReplayer<>(cls);
     }
 
     public static <T> Conversion.Builder.Initial<T> from(Class<T> from) {
