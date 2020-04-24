@@ -40,7 +40,7 @@ public class InvocationReplayerTest extends BaseTest {
 
         Bar proxy = Fluently.record(bar)
                             .filteringWith(filter)
-                            .savingTo(invocationStore.withBatchSize(1))
+                            .savingFor(invocationStore.withBatchSize(1))
                             .proxyingAs(Bar.class);
         assertEquals(result, proxy.doSomethingShadowed(foo));
         await(5L, TimeUnit.SECONDS);

@@ -4,9 +4,6 @@ import io.shadowstack.candidates.InvocationSource;
 import io.shadowstack.exceptions.InvocationKeyException;
 import io.shadowstack.exceptions.InvocationSinkException;
 import io.shadowstack.exceptions.InvocationSourceException;
-import io.shadowstack.incumbents.Invocation;
-import io.shadowstack.incumbents.InvocationContext;
-import io.shadowstack.incumbents.InvocationKey;
 import io.shadowstack.incumbents.InvocationSink;
 import lombok.extern.slf4j.Slf4j;
 
@@ -24,11 +21,6 @@ public class InMemoryInvocationStore extends InvocationSink implements Invocatio
 
     public InMemoryInvocationStore(Function<List<Invocation>, Boolean> callback) {
         this.callback = callback;
-    }
-
-    @Override
-    public void shadow(List<Invocation> invocations) throws InvocationSinkException {
-        throw new InvocationSinkException("Not implemented");
     }
 
     @Override

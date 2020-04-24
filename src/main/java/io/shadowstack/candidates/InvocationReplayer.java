@@ -1,8 +1,8 @@
 package io.shadowstack.candidates;
 
-import io.shadowstack.incumbents.Invocation;
-import io.shadowstack.incumbents.InvocationContext;
-import io.shadowstack.incumbents.InvocationKey;
+import io.shadowstack.Invocation;
+import io.shadowstack.InvocationContext;
+import io.shadowstack.InvocationKey;
 import lombok.extern.slf4j.Slf4j;
 import net.sf.cglib.proxy.Enhancer;
 import net.sf.cglib.proxy.MethodInterceptor;

@@ -31,7 +31,7 @@ public class InvocationRecorderTest extends BaseTest {
         );
         Bar proxy = Fluently.record(bar)
                         .filteringWith(filter)
-                        .savingTo(new ObserveOnlyInvocationSink() {
+                        .savingFor(new InvocationSink() {
                             @Override
                             public void record(List<Invocation> recordings) {
                                 Invocation invocation = recordings.get(0);
@@ -84,7 +84,7 @@ public class InvocationRecorderTest extends BaseTest {
         );
         Bar proxy = Fluently.record(bar)
                 .filteringWith(filter)
-                .savingTo(new ObserveOnlyInvocationSink() {
+                .savingFor(new InvocationSink() {
                     @Override
                     public void record(List<Invocation> recordings) {
                         Invocation invocation = recordings.get(0);
@@ -139,7 +139,7 @@ public class InvocationRecorderTest extends BaseTest {
                 .throttlingTo(
                         Fluently.percent(1.0)
                 )
-                .savingTo(new ObserveOnlyInvocationSink() {
+                .savingFor(new InvocationSink() {
                     @Override
                     public void record(List<Invocation> recordings) {
                         log.info(name + ": got batch of size " + recordings.size());
@@ -170,7 +170,7 @@ public class InvocationRecorderTest extends BaseTest {
                 .throttlingTo(
                         Fluently.percent(0.0)
                 )
-                .savingTo(new ObserveOnlyInvocationSink() {
+                .savingFor(new InvocationSink() {
                     @Override
                     public void record(List<Invocation> recordings) {
                         fail("Transmit should never have been called.");
@@ -199,7 +199,7 @@ public class InvocationRecorderTest extends BaseTest {
                 .throttlingTo(
                         Fluently.rate(2).per(1L, TimeUnit.SECONDS)
                 )
-                .savingTo(new ObserveOnlyInvocationSink() {
+                .savingFor(new InvocationSink() {
                     @Override
                     public void record(List<Invocation> recordings) {
                         log.info(name + ": got batch of size " + recordings.size());
@@ -233,7 +233,7 @@ public class InvocationRecorderTest extends BaseTest {
                 .throttlingTo(
                         Fluently.rate(2).per(1L, TimeUnit.SECONDS)
                 )
-                .savingTo(new ObserveOnlyInvocationSink() {
+                .savingFor(new InvocationSink() {
                     @Override
                     public void record(List<Invocation> recordings) {
                         log.info(name + ": got batch of size " + recordings.size());

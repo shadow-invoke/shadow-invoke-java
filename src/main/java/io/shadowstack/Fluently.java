@@ -1,6 +1,8 @@
 package io.shadowstack;
 
 import io.shadowstack.candidates.InvocationReplayer;
+import io.shadowstack.incumbents.ReplayServiceSink;
+import io.shadowstack.incumbents.ShadowServiceSink;
 import lombok.experimental.UtilityClass;
 import io.shadowstack.filters.FieldFilter;
 import io.shadowstack.filters.Noise;
@@ -85,5 +87,13 @@ public class Fluently {
 
     public static <T> InvocationReplayer<T> replay(Class<T> cls) {
         return new InvocationReplayer<>(cls);
+    }
+
+    public static ShadowServiceSink shadowing() {
+        return new ShadowServiceSink();
+    }
+
+    public static ReplayServiceSink replaying() {
+        return new ReplayServiceSink();
     }
 }

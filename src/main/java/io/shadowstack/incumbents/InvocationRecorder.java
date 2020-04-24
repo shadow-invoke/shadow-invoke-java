@@ -1,5 +1,7 @@
 package io.shadowstack.incumbents;
 
+import io.shadowstack.Invocation;
+import io.shadowstack.InvocationContext;
 import io.shadowstack.throttles.Throttle;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
@@ -44,7 +46,7 @@ public class InvocationRecorder implements MethodInterceptor, Consumer<FluxSink<
         return this;
     }
 
-    public InvocationRecorder savingTo(InvocationSink invocationSink) {
+    public InvocationRecorder savingFor(InvocationSink invocationSink) {
         this.flux = Flux.create(this, FluxSink.OverflowStrategy.DROP);
         this.flux.publishOn(SCHEDULER)
                  .subscribeOn(SCHEDULER)

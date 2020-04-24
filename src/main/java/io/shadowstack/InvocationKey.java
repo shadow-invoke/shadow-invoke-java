@@ -1,4 +1,4 @@
-package io.shadowstack.incumbents;
+package io.shadowstack;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;

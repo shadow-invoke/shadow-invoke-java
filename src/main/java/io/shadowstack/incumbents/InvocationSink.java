@@ -1,5 +1,6 @@
 package io.shadowstack.incumbents;
 
+import io.shadowstack.Invocation;
 import io.shadowstack.exceptions.InvocationSinkException;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
@@ -16,8 +17,7 @@ public abstract class InvocationSink implements Subscriber<List<Invocation>> {
     private Subscription subscription = null;
     @Getter private int batchSize = 1;
 
-    public abstract void shadow(List<Invocation> invocations) throws InvocationSinkException;
-
+    // TODO: Shadowing sink will be its own impl. with a specialized override of record
     public abstract void record(List<Invocation> invocations) throws InvocationSinkException;
 
     public InvocationSink withBatchSize(int size) {

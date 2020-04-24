@@ -1,4 +1,4 @@
-package io.shadowstack.incumbents;
+package io.shadowstack;
 
 import lombok.Data;
 import lombok.ToString;
