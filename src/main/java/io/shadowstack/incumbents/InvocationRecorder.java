@@ -70,8 +70,10 @@ public class InvocationRecorder implements MethodInterceptor, Consumer<FluxSink<
         Object result = method.invoke(this.originalInstance, arguments); // TODO: How to replay exceptions?
         try(InvocationContext context = new InvocationContext()) {
             Invocation invocation = new Invocation(
-                    this.originalInstance.getClass(), method, context, this.objectFilter.filterAsReferenceCopy(arguments),
-                    this.objectFilter.filterAsReferenceCopy(result), this.objectFilter.filterAsEvaluatedCopy(arguments),
+                    method, context,
+                    this.objectFilter.filterAsReferenceCopy(arguments),
+                    this.objectFilter.filterAsReferenceCopy(result),
+                    this.objectFilter.filterAsEvaluatedCopy(arguments),
                     this.objectFilter.filterAsEvaluatedCopy(result)
             );
             if(this.getThrottle() == null || !this.getThrottle().reject()) {

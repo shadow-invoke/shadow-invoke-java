@@ -55,11 +55,7 @@ public class InvocationReplayer<T> implements MethodInterceptor {
         // Top-level caller is responsible for setting a context for replays.
         // To this end, it will receive a GUID in the shadowing request.
         try(InvocationContext context = new InvocationContext(this.contextId)) {
-            InvocationKey key = new InvocationKey(
-                    method,
-                    this.cls,
-                    this.objectFilter.filterAsEvaluatedCopy(args)
-            );
+            InvocationKey key = new InvocationKey(method, this.objectFilter.filterAsEvaluatedCopy(args));
             Invocation invocation = this.invocationSource.retrieve(key, context);
             // Using reference result here since replay should be as close to original as possible
             return (invocation != null) ? invocation.getReferenceResult() : null;

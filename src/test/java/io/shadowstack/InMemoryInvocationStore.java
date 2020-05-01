@@ -1,7 +1,6 @@
 package io.shadowstack;
 
 import io.shadowstack.candidates.InvocationSource;
-import io.shadowstack.exceptions.InvocationKeyException;
 import io.shadowstack.exceptions.InvocationSinkException;
 import io.shadowstack.exceptions.InvocationSourceException;
 import io.shadowstack.incumbents.InvocationSink;
@@ -28,12 +27,7 @@ public class InMemoryInvocationStore extends InvocationSink implements Invocatio
         if(invocations != null && !invocations.isEmpty()) {
             for(Invocation invocation : invocations) {
                 String contextGuid = invocation.getInvocationContext().getContextId();
-                String keyHash = null;
-                try {
-                    keyHash = invocation.getInvocationKey().generateHash();
-                } catch (InvocationKeyException e) {
-                    throw new InvocationSinkException(e);
-                }
+                String keyHash = invocation.getInvocationKey().getInvocationHash();
                 CONTEXT_TO_KEY_TO_RECORDINGS.putIfAbsent(contextGuid, new HashMap<>());
                 CONTEXT_TO_KEY_TO_RECORDINGS.get(contextGuid).putIfAbsent(keyHash, new LinkedList<>());
                 CONTEXT_TO_KEY_TO_RECORDINGS.get(contextGuid).get(keyHash).offer(invocation);
@@ -51,16 +45,10 @@ public class InMemoryInvocationStore extends InvocationSink implements Invocatio
             throw new InvocationSourceException(msg);
         }
         String contextGuid = context.getContextId();
-        String keyHash = null;
-        try {
-            keyHash = key.generateHash();
-        } catch (InvocationKeyException e) {
-            throw new InvocationSourceException(e);
-        }
         if(CONTEXT_TO_KEY_TO_RECORDINGS.containsKey(contextGuid) &&
-           CONTEXT_TO_KEY_TO_RECORDINGS.get(contextGuid).containsKey(keyHash)) {
+           CONTEXT_TO_KEY_TO_RECORDINGS.get(contextGuid).containsKey(key.getInvocationHash())) {
             // Pops it off the queue and returns. Next call will get next instance.
-            return CONTEXT_TO_KEY_TO_RECORDINGS.get(contextGuid).get(keyHash).poll();
+            return CONTEXT_TO_KEY_TO_RECORDINGS.get(contextGuid).get(key.getInvocationHash()).poll();
         }
         return null;
     }

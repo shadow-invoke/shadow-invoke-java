@@ -30,13 +30,20 @@ public class Invocation {
     private final Object[] evaluatedArguments;
     private final Object evaluatedResult;
 
-    public Invocation(Class<?> invocationTarget, Method invokedMethod, InvocationContext invocationContext,
-                      Object[] referenceArguments, Object referenceResult, Object[] evaluatedArguments, Object evaluatedResult) {
-        this.invocationKey = new InvocationKey(invokedMethod, invocationTarget, evaluatedArguments);
+    public Invocation(Method invokedMethod, InvocationContext invocationContext, Object[] referenceArguments,
+                      Object referenceResult, Object[] evaluatedArguments, Object evaluatedResult) {
+        this.invocationKey = new InvocationKey(invokedMethod, evaluatedArguments);
         this.invocationContext = invocationContext;
         this.referenceArguments = referenceArguments;
         this.referenceResult = referenceResult;
         this.evaluatedArguments = evaluatedArguments;
         this.evaluatedResult = evaluatedResult;
+    }
+
+    public boolean isValid() {
+        return this.invocationContext != null && this.invocationContext.isValid() &&
+               this.invocationKey != null && this.invocationKey.isValid() &&
+               this.evaluatedResult != null && this.referenceResult != null &&
+               this.evaluatedArguments != null && this.referenceArguments != null;
     }
 }
