@@ -69,9 +69,24 @@
       <version>3.8.0</version>
     </dependency>
     <dependency>
-      <groupId>io.shadowstack</groupId>
-      <artifactId>shoehorn-java</artifactId>
-      <version>1.0.0</version>
+      <groupId>io.github.openfeign</groupId>
+      <artifactId>feign-core</artifactId>
+      <version>9.3.1</version>
+    </dependency>
+    <dependency>
+      <groupId>io.github.openfeign</groupId>
+      <artifactId>feign-okhttp</artifactId>
+      <version>9.3.1</version>
+    </dependency>
+    <dependency>
+      <groupId>io.github.openfeign</groupId>
+      <artifactId>feign-jackson</artifactId>
+      <version>9.3.1</version>
+    </dependency>
+    <dependency>
+      <groupId>io.github.openfeign</groupId>
+      <artifactId>feign-slf4j</artifactId>
+      <version>9.3.1</version>
     </dependency>
     <dependency>
       <groupId>cglib</groupId>

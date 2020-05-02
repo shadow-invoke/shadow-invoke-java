@@ -1,18 +1,18 @@
 package io.shadowstack.candidates;
 
 import io.javalin.Javalin;
+import io.javalin.core.JavalinServer;
 import io.javalin.http.BadRequestResponse;
 import io.javalin.http.InternalServerErrorResponse;
 import io.shadowstack.filters.ObjectFilter;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
+import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Set;
+import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -25,40 +25,42 @@ import static io.javalin.apibuilder.ApiBuilder.post;
 @Builder
 @AllArgsConstructor
 public class CandidateService implements Runnable {
-    private final String oracleHost;
-    private final Set<Method> shadowedMethods;
-    private final Object candidateInstance;
+    @NonNull private final CandidateRegistrar registrar;
+    @NonNull private final Set<Method> shadowedMethods;
+    @NonNull private final Object candidateInstance;
     private final ObjectFilter objectFilter;
     private final int servicePort;
+    private Map<String, Method> methodsServed;
+    private Map<String, RegistrationResponse> methodsRegistered;
 
     @Override
     public void run() {
         // Generate keys for registering with the oracle service
         String cls = this.candidateInstance.getClass().getCanonicalName();
-        final Map<String, Method> map = this.shadowedMethods
-                                                .stream()
-                                                .collect(
-                                                    Collectors.toMap(
-                                                        m -> cls + "." + m.getName(),
-                                                        Function.identity()
-                                                    )
-                                                );
-        register(map.keySet());
+        this.methodsServed = this.shadowedMethods
+                                    .stream()
+                                    .collect(
+                                        Collectors.toMap(
+                                            m -> cls + "." + m.getName(),
+                                            Function.identity()
+                                        )
+                                    );
         Javalin app = Javalin.create().start(servicePort);
+        register(app.server());
         app.routes(() -> {
             post("/shadow", ctx -> {
-                ShadowResponse response = this.shadow(ctx.bodyAsClass(ShadowRequest.class), map);
+                ShadowResponse response = this.shadow(ctx.bodyAsClass(ShadowRequest.class));
                 ctx.json(Objects.requireNonNull(response));
             });
         });
     }
 
-    private ShadowResponse shadow(ShadowRequest request, Map<String, Method> methods) {
+    private ShadowResponse shadow(ShadowRequest request) {
         if(request == null || !request.isValid()) {
             throw new BadRequestResponse("Invocation passed is not valid");
         }
         String key = request.getInvocationKey().getTargetClassName() + "." + request.getInvocationKey().getTargetMethodName();
-        Method toInvoke = methods.get(key);
+        Method toInvoke = this.methodsServed.get(key);
         if(toInvoke == null) {
             throw new BadRequestResponse("Method not explicitly served by this candidate: " + key);
         }
@@ -83,7 +85,11 @@ public class CandidateService implements Runnable {
         Object result = null;
         try {
             result = toInvoke.invoke(this.candidateInstance, givenArguments);
-            result = this.objectFilter.filterAsEvaluatedCopy(result);
+            if(objectFilter != null) {
+                result = this.objectFilter.filterAsEvaluatedCopy(result);
+            } else {
+                log.warn(String.format("Object filter is null while serving %s", request));
+            }
         } catch (IllegalAccessException | InvocationTargetException e) {
             String msg = String.format("While generating result for %s, got error %s", request, e.getMessage());
             log.error(msg, e);
@@ -92,7 +98,17 @@ public class CandidateService implements Runnable {
         return new ShadowResponse(request.getInvocationKey(), request.getInvocationContext(), result);
     }
 
-    private void register(Set<String> keys) {
-        // TODO: connect to oracle service, send keys and this service's IP + port
+    private void register(JavalinServer server) {
+        this.methodsRegistered = new HashMap<>();
+        this.methodsServed.entrySet().forEach(e -> {
+            List<String> argumentClasses = Arrays.stream(e.getValue().getParameterTypes())
+                                                    .map(Class::getCanonicalName)
+                                                    .collect(Collectors.toList());
+            String targetClass = this.candidateInstance.getClass().getCanonicalName();
+            RegistrationRequest request = new RegistrationRequest(targetClass, e.getValue().getName(), argumentClasses,
+                                                                  server.getServerHost(), server.getServerPort());
+            RegistrationResponse response = this.registrar.register(request);
+            this.methodsRegistered.put(e.getKey(), response);
+        });
     }
 }
