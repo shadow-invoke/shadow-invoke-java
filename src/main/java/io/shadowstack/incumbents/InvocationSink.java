@@ -1,7 +1,6 @@
 package io.shadowstack.incumbents;
 
 import io.shadowstack.Invocation;
-import io.shadowstack.exceptions.InvocationSinkException;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.reactivestreams.Subscriber;
@@ -13,12 +12,14 @@ import java.util.List;
  * A sink for Invocations as they are either shadowed or recorded. Can either be a remote or local sink.
  */
 @Slf4j
-public abstract class InvocationSink implements Subscriber<List<Invocation>> {
+public class InvocationSink implements Subscriber<List<Invocation>> {
+    private final InvocationDestination destination;
     private Subscription subscription = null;
     @Getter private int batchSize = 1;
 
-    // TODO: Shadowing sink will be its own impl. with a specialized override of record
-    public abstract void record(List<Invocation> invocations) throws InvocationSinkException;
+    public InvocationSink(InvocationDestination destination) {
+        this.destination = destination;
+    }
 
     public InvocationSink withBatchSize(int size) {
         this.batchSize = size;
@@ -39,9 +40,9 @@ public abstract class InvocationSink implements Subscriber<List<Invocation>> {
     @Override
     public void onNext(List<Invocation> invocations) {
         try {
-            this.record(invocations);
-        } catch (InvocationSinkException e) {
-            log.error(String.format("While calling put() on %s", invocations), e);
+            this.destination.send(invocations);
+        } catch (Throwable t) {
+            log.error(String.format("While sending %s to %s.", invocations, this.destination), t);
         }
         this.subscription.request(this.batchSize + 1);
     }

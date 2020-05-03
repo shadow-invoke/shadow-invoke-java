@@ -1,29 +1,28 @@
 package io.shadowstack;
 
 import io.shadowstack.candidates.InvocationSource;
-import io.shadowstack.exceptions.InvocationSinkException;
 import io.shadowstack.exceptions.InvocationSourceException;
-import io.shadowstack.incumbents.InvocationSink;
+import io.shadowstack.incumbents.InvocationDestination;
 import lombok.extern.slf4j.Slf4j;
 
 import java.util.*;
 import java.util.function.Function;
 
 /**
- * A InvocationSink for unit testing that saves to an in-memory cache.
+ * A InvocationDestination/Source for unit testing that saves to an in-memory cache.
  */
 @Slf4j
-public class InMemoryInvocationStore extends InvocationSink implements InvocationSource {
+public class InMemoryInvocationDestination implements InvocationSource, InvocationDestination {
     // Context GUID -> Key Hash -> Ordered Recordings
     private final Map<String, Map<String, Queue<Invocation>>> CONTEXT_TO_KEY_TO_RECORDINGS = new HashMap<>();
     private final Function<List<Invocation>, Boolean> callback;
 
-    public InMemoryInvocationStore(Function<List<Invocation>, Boolean> callback) {
+    public InMemoryInvocationDestination(Function<List<Invocation>, Boolean> callback) {
         this.callback = callback;
     }
 
     @Override
-    public void record(List<Invocation> invocations) throws InvocationSinkException {
+    public List<Invocation> send(List<Invocation> invocations) {
         if(invocations != null && !invocations.isEmpty()) {
             for(Invocation invocation : invocations) {
                 String contextGuid = invocation.getInvocationContext().getContextId();
@@ -36,6 +35,7 @@ public class InMemoryInvocationStore extends InvocationSink implements Invocatio
         if(this.callback != null) {
             this.callback.apply(invocations);
         }
+        return invocations;
     }
 
     @Override

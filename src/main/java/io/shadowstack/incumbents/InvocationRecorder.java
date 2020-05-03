@@ -46,7 +46,7 @@ public class InvocationRecorder implements MethodInterceptor, Consumer<FluxSink<
         return this;
     }
 
-    public InvocationRecorder savingFor(InvocationSink invocationSink) {
+    public InvocationRecorder sendingTo(InvocationSink invocationSink) {
         this.flux = Flux.create(this, FluxSink.OverflowStrategy.DROP);
         this.flux.publishOn(SCHEDULER)
                  .subscribeOn(SCHEDULER)

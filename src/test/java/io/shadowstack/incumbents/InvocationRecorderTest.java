@@ -31,14 +31,15 @@ public class InvocationRecorderTest extends BaseTest {
         );
         Bar proxy = Fluently.record(bar)
                         .filteringWith(filter)
-                        .savingFor(new InvocationSink() {
+                        .sendingTo(new InvocationSink(new InvocationDestination() {
                             @Override
-                            public void record(List<Invocation> recordings) {
-                                Invocation invocation = recordings.get(0);
+                            public List<Invocation> send(List<Invocation> invocations) {
+                                Invocation invocation = invocations.get(0);
                                 log.info(name + ": got incumbents " + invocation);
                                 future.complete(invocation);
+                                return invocations;
                             }
-                        }.withBatchSize(1))
+                        }).withBatchSize(1))
                         .proxyingAs(Bar.class);
         assertEquals(result, proxy.doSomethingShadowed(foo));
         Invocation invocation = future.get(5L, TimeUnit.SECONDS);
@@ -84,14 +85,15 @@ public class InvocationRecorderTest extends BaseTest {
         );
         Bar proxy = Fluently.record(bar)
                 .filteringWith(filter)
-                .savingFor(new InvocationSink() {
+                .sendingTo(new InvocationSink(new InvocationDestination() {
                     @Override
-                    public void record(List<Invocation> recordings) {
-                        Invocation invocation = recordings.get(0);
-                        log.info(name + ": got incumbents " + invocation.toString());
+                    public List<Invocation> send(List<Invocation> invocations) {
+                        Invocation invocation = invocations.get(0);
+                        log.info(name + ": got incumbents " + invocation);
                         future.complete(invocation);
+                        return invocations;
                     }
-                }.withBatchSize(1))
+                }).withBatchSize(1))
                 .proxyingAs(Bar.class);
         assertEquals(result, proxy.doSomethingShadowed(foo));
         Invocation invocation = future.get(5L, TimeUnit.SECONDS);
@@ -139,14 +141,15 @@ public class InvocationRecorderTest extends BaseTest {
                 .throttlingTo(
                         Fluently.percent(1.0)
                 )
-                .savingFor(new InvocationSink() {
+                .sendingTo(new InvocationSink(new InvocationDestination() {
                     @Override
-                    public void record(List<Invocation> recordings) {
-                        log.info(name + ": got batch of size " + recordings.size());
-                        threadAssertEquals(20, recordings.size());
+                    public List<Invocation> send(List<Invocation> invocations) {
+                        log.info(name + ": got batch of size " + invocations.size());
+                        threadAssertEquals(20, invocations.size());
                         resume();
+                        return invocations;
                     }
-                }.withBatchSize(20))
+                }).withBatchSize(20))
                 .proxyingAs(Bar.class);
         for(int i=0; i<100; ++i) {
             assertEquals(result, proxy.doSomethingShadowed(foo));
@@ -170,13 +173,14 @@ public class InvocationRecorderTest extends BaseTest {
                 .throttlingTo(
                         Fluently.percent(0.0)
                 )
-                .savingFor(new InvocationSink() {
+                .sendingTo(new InvocationSink(new InvocationDestination() {
                     @Override
-                    public void record(List<Invocation> recordings) {
+                    public List<Invocation> send(List<Invocation> invocations) {
                         fail("Transmit should never have been called.");
                         resume();
+                        return invocations;
                     }
-                }.withBatchSize(1))
+                }).withBatchSize(1))
                 .proxyingAs(Bar.class);
         for(int i=0; i<100; ++i) {
             assertEquals(result, proxy.doSomethingShadowed(foo));
@@ -199,14 +203,15 @@ public class InvocationRecorderTest extends BaseTest {
                 .throttlingTo(
                         Fluently.rate(2).per(1L, TimeUnit.SECONDS)
                 )
-                .savingFor(new InvocationSink() {
+                .sendingTo(new InvocationSink(new InvocationDestination() {
                     @Override
-                    public void record(List<Invocation> recordings) {
-                        log.info(name + ": got batch of size " + recordings.size());
-                        threadAssertEquals(4, recordings.size());
+                    public List<Invocation> send(List<Invocation> invocations) {
+                        log.info(name + ": got batch of size " + invocations.size());
+                        threadAssertEquals(4, invocations.size());
                         resume();
+                        return invocations;
                     }
-                }.withBatchSize(4))
+                }).withBatchSize(4))
                 .proxyingAs(Bar.class);
         for(int i=0; i<8; ++i) {
             assertEquals(result, proxy.doSomethingShadowed(foo));
@@ -233,14 +238,15 @@ public class InvocationRecorderTest extends BaseTest {
                 .throttlingTo(
                         Fluently.rate(2).per(1L, TimeUnit.SECONDS)
                 )
-                .savingFor(new InvocationSink() {
+                .sendingTo(new InvocationSink(new InvocationDestination() {
                     @Override
-                    public void record(List<Invocation> recordings) {
-                        log.info(name + ": got batch of size " + recordings.size());
-                        threadAssertEquals(4, recordings.size());
+                    public List<Invocation> send(List<Invocation> invocations) {
+                        log.info(name + ": got batch of size " + invocations.size());
+                        threadAssertEquals(4, invocations.size());
                         resume();
+                        return invocations;
                     }
-                }.withBatchSize(4))
+                }).withBatchSize(4))
                 .proxyingAs(null);
         assertNull(proxy);
     }
