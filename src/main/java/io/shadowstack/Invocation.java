@@ -1,5 +1,6 @@
 package io.shadowstack;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.ToString;
@@ -40,6 +41,7 @@ public class Invocation {
         this.evaluatedResult = evaluatedResult;
     }
 
+    @JsonIgnore
     public boolean isValid() {
         return this.invocationContext != null && this.invocationContext.isValid() &&
                this.invocationKey != null && this.invocationKey.isValid() &&

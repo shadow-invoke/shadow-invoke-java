@@ -1,8 +1,11 @@
 package io.shadowstack;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 import lombok.ToString;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.codec.digest.DigestUtils;
@@ -17,11 +20,13 @@ import java.lang.reflect.Method;
 @Data
 @Slf4j
 @ToString
+@NoArgsConstructor
+@AllArgsConstructor
 public class InvocationKey {
     private final static ObjectMapper MAPPER = new ObjectMapper();
-    private final String targetMethodName;
-    private final String targetClassName;
-    private final String invocationHash;
+    private String targetMethodName;
+    private String targetClassName;
+    private String invocationHash;
 
     public InvocationKey(Method invokedMethod, Object[] evaluatedArguments) {
         this.targetMethodName = invokedMethod.getName();
@@ -29,6 +34,7 @@ public class InvocationKey {
         this.invocationHash = generateHash(this.targetMethodName, this.targetClassName, evaluatedArguments);
     }
 
+    @JsonIgnore
     public boolean isValid() {
         return this.targetMethodName != null && this.targetMethodName.length() > 0 &&
                this.targetClassName != null && this.targetClassName.length() > 0;

@@ -1,9 +1,6 @@
 package io.shadowstack;
 
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.EqualsAndHashCode;
-import lombok.ToString;
+import lombok.*;
 import io.shadowstack.filters.Noise;
 import io.shadowstack.filters.Secret;
 
@@ -13,6 +10,7 @@ import java.util.concurrent.TimeUnit;
 @Data
 @ToString
 @EqualsAndHashCode
+@NoArgsConstructor
 @AllArgsConstructor
 public class Baz {
     private String title;
@@ -21,5 +19,5 @@ public class Baz {
     private Float height;
     @Noise
     private Long id;
-    private Map<TimeUnit, Task> taskTime;
+    private Map<TimeUnit, Title> taskTime;
 }

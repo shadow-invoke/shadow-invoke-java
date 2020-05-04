@@ -1,5 +1,6 @@
 package io.shadowstack;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.Data;
 import lombok.ToString;
 import java.util.UUID;
@@ -17,6 +18,7 @@ public class InvocationContext implements AutoCloseable {
         this.didSetInvocationId = true;
     }
 
+    @JsonIgnore
     public boolean isValid() {
         return this.contextId != null && this.contextId.length() > 0;
     }

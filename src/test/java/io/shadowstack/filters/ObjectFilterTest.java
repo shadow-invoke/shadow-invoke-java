@@ -1,22 +1,23 @@
 package io.shadowstack.filters;
 
 import io.shadowstack.DefaultValue;
-import io.shadowstack.Fluently;
 import org.junit.Test;
 import io.shadowstack.BaseTest;
 import io.shadowstack.Baz;
 import io.shadowstack.Foo;
+
+import static io.shadowstack.Fluently.*;
 
 import static org.junit.Assert.assertEquals;
 
 public class ObjectFilterTest extends BaseTest {
     @Test
     public void testToObjectDepth() {
-        ObjectFilter filter = Fluently.filter(
-                Fluently.noise().from(Foo.class),
-                Fluently.secrets().from(Foo.class),
-                Fluently.noise().from(Baz.class),
-                Fluently.secrets().from(Baz.class)
+        ObjectFilter filter = filter(
+                    noise().from(Foo.class),
+                    secrets().from(Foo.class),
+                    noise().from(Baz.class),
+                    secrets().from(Baz.class)
         ).toObjectDepth(1);
         Foo filtered = (Foo)filter.filterAsEvaluatedCopy(foo);
         assertEquals(foo.getFirstName(), filtered.getFirstName());

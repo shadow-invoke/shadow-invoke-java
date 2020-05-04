@@ -1,6 +1,6 @@
 package io.shadowstack;
 
-public enum Task {
+public enum Title {
     Clerical,
     Management
 }

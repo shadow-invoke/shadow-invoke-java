@@ -1,5 +1,7 @@
 package io.shadowstack.candidates;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
 import io.javalin.Javalin;
 import io.javalin.core.JavalinServer;
 import io.javalin.http.BadRequestResponse;
@@ -24,7 +26,13 @@ import static io.javalin.apibuilder.ApiBuilder.post;
 @Slf4j
 @Builder
 @AllArgsConstructor
-public class CandidateService implements Runnable {
+public class CandidateService implements Runnable, AutoCloseable {
+    private static final ObjectMapper MAPPER = new ObjectMapper();
+    static {
+        // TODO: Too tightly coupled to Jackson for my liking
+        MAPPER.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
+        MAPPER.findAndRegisterModules();
+    }
     @NonNull private final CandidateRegistrar registrar;
     @NonNull private final Set<Method> shadowedMethods;
     @NonNull private final Object candidateInstance;
@@ -32,6 +40,7 @@ public class CandidateService implements Runnable {
     private final int servicePort;
     private Map<String, Method> methodsServed;
     private Map<String, RegistrationResponse> methodsRegistered;
+    private Javalin app;
 
     @Override
     public void run() {
@@ -45,9 +54,9 @@ public class CandidateService implements Runnable {
                                             Function.identity()
                                         )
                                     );
-        Javalin app = Javalin.create().start(servicePort);
-        register(app.server());
-        app.routes(() -> {
+        this.app = Javalin.create().start(servicePort);
+        register(this.app.server()); // might not get called until app shuts down?
+        this.app.routes(() -> {
             post("/shadow", ctx -> {
                 ShadowResponse response = this.shadow(ctx.bodyAsClass(ShadowRequest.class));
                 ctx.json(Objects.requireNonNull(response));
@@ -56,6 +65,7 @@ public class CandidateService implements Runnable {
     }
 
     private ShadowResponse shadow(ShadowRequest request) {
+        log.info("Got: " + request);
         if(request == null || !request.isValid()) {
             throw new BadRequestResponse("Invocation passed is not valid");
         }
@@ -73,7 +83,7 @@ public class CandidateService implements Runnable {
         }
         for(int i=0;i<givenArguments.length;++i) {
             try {
-                givenArguments[i] = methodArgumentClasses[i].cast(givenArguments[i]);
+                givenArguments[i] = MAPPER.convertValue(givenArguments[i], methodArgumentClasses[i]);
             } catch(ClassCastException e) {
                 String msg = "Can't cast argument %d from given type %s to expected type %s.";
                 String givenType = givenArguments[i].getClass().getCanonicalName();
@@ -95,6 +105,7 @@ public class CandidateService implements Runnable {
             log.error(msg, e);
             throw new InternalServerErrorResponse(msg);
         }
+        log.info("Returning: " + result);
         return new ShadowResponse(request.getInvocationKey(), request.getInvocationContext(), result);
     }
 
@@ -110,5 +121,12 @@ public class CandidateService implements Runnable {
             RegistrationResponse response = this.registrar.register(request);
             this.methodsRegistered.put(e.getKey(), response);
         });
+    }
+
+    @Override
+    public void close() throws Exception {
+        if(this.app != null) {
+            this.app.stop();
+        }
     }
 }

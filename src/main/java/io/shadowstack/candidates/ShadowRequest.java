@@ -1,5 +1,6 @@
 package io.shadowstack.candidates;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import io.shadowstack.InvocationContext;
 import io.shadowstack.InvocationKey;
 import lombok.AllArgsConstructor;
@@ -16,6 +17,7 @@ public class ShadowRequest {
     private InvocationContext invocationContext;
     private Object[] arguments;
 
+    @JsonIgnore
     public boolean isValid() {
         return this.invocationContext != null && this.invocationContext.isValid() &&
                 this.invocationKey != null && this.invocationKey.isValid() && this.arguments != null;
