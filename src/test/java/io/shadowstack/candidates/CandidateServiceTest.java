@@ -1,5 +1,6 @@
 package io.shadowstack.candidates;
 
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import feign.Feign;
 import feign.Headers;
 import feign.Logger;
@@ -9,10 +10,16 @@ import feign.jackson.JacksonEncoder;
 import feign.okhttp.OkHttpClient;
 import feign.slf4j.Slf4jLogger;
 import io.shadowstack.*;
+import io.shadowstack.candidates.registrars.CandidateRegistrar;
+import io.shadowstack.candidates.registrars.RegistrationRequest;
+import io.shadowstack.candidates.registrars.RegistrationResponse;
 import io.shadowstack.filters.ObjectFilter;
+import io.shadowstack.invocations.InvocationContext;
+import io.shadowstack.invocations.InvocationKey;
 import org.junit.Test;
 
 import java.lang.reflect.Method;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.UUID;
@@ -58,8 +65,9 @@ public class CandidateServiceTest extends BaseTest {
             TestService client = Feign
                     .builder()
                     .client(new OkHttpClient())
-                    .encoder(new JacksonEncoder())
-                    .decoder(new JacksonDecoder())
+                    // Encoder/decoder outfitted with JavaTimeModule to handle Foo's LocalDateTime member
+                    .encoder(new JacksonEncoder(Collections.singleton(new JavaTimeModule())))
+                    .decoder(new JacksonDecoder(Collections.singleton(new JavaTimeModule())))
                     .logger(new Slf4jLogger(TestService.class))
                     .logLevel(Logger.Level.FULL)
                     .target(TestService.class, "http://localhost:" + port);

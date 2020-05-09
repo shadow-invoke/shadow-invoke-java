@@ -1,4 +1,4 @@
-package io.shadowstack.candidates;
+package io.shadowstack.candidates.registrars;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;

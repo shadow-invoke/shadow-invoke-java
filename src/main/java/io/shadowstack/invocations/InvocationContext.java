@@ -1,4 +1,4 @@
-package io.shadowstack;
+package io.shadowstack.invocations;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.Data;

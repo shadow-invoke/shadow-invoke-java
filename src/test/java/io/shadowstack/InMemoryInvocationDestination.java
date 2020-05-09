@@ -1,8 +1,11 @@
 package io.shadowstack;
 
-import io.shadowstack.candidates.InvocationSource;
+import io.shadowstack.invocations.Invocation;
+import io.shadowstack.invocations.InvocationContext;
+import io.shadowstack.invocations.InvocationKey;
+import io.shadowstack.invocations.sources.InvocationSource;
 import io.shadowstack.exceptions.InvocationSourceException;
-import io.shadowstack.incumbents.InvocationDestination;
+import io.shadowstack.invocations.destinations.InvocationDestination;
 import lombok.extern.slf4j.Slf4j;
 
 import java.util.*;

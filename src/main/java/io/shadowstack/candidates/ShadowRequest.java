@@ -1,8 +1,8 @@
 package io.shadowstack.candidates;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import io.shadowstack.InvocationContext;
-import io.shadowstack.InvocationKey;
+import io.shadowstack.invocations.InvocationContext;
+import io.shadowstack.invocations.InvocationKey;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;

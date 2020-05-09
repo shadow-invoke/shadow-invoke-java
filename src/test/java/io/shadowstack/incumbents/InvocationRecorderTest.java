@@ -1,6 +1,8 @@
 package io.shadowstack.incumbents;
 
 import io.shadowstack.*;
+import io.shadowstack.invocations.Invocation;
+import io.shadowstack.invocations.destinations.InvocationDestination;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.Test;
 import io.shadowstack.filters.Noise;

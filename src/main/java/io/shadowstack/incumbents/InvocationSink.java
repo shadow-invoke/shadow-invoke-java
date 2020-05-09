@@ -1,6 +1,7 @@
 package io.shadowstack.incumbents;
 
-import io.shadowstack.Invocation;
+import io.shadowstack.invocations.Invocation;
+import io.shadowstack.invocations.destinations.InvocationDestination;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.reactivestreams.Subscriber;

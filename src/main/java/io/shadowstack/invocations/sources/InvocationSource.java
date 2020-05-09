@@ -1,9 +1,9 @@
-package io.shadowstack.candidates;
+package io.shadowstack.invocations.sources;
 
 import io.shadowstack.exceptions.InvocationSourceException;
-import io.shadowstack.Invocation;
-import io.shadowstack.InvocationContext;
-import io.shadowstack.InvocationKey;
+import io.shadowstack.invocations.Invocation;
+import io.shadowstack.invocations.InvocationContext;
+import io.shadowstack.invocations.InvocationKey;
 
 public interface InvocationSource {
     Invocation retrieve(InvocationKey key, InvocationContext context) throws InvocationSourceException;

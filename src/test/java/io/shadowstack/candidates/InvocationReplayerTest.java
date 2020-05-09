@@ -12,6 +12,7 @@ import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
+import static io.shadowstack.Fluently.*;
 import static org.junit.Assert.assertEquals;
 
 @Slf4j
@@ -33,23 +34,23 @@ public class InvocationReplayerTest extends BaseTest {
         });
 
         ObjectFilter filter = Fluently.filter(
-                Fluently.noise().from(Foo.class),
-                Fluently.secrets().from(Foo.class),
-                Fluently.noise().from(Baz.class),
-                Fluently.secrets().from(Baz.class)
+                                        noise().from(Foo.class),
+                                        secrets().from(Foo.class),
+                                        noise().from(Baz.class),
+                                        secrets().from(Baz.class)
         );
 
-        Bar proxy = Fluently.record(bar)
+        Bar proxy = record(bar)
                             .filteringWith(filter)
                             .sendingTo(new InvocationSink(invocationDestination).withBatchSize(1))
                             .proxyingAs(Bar.class);
         assertEquals(result, proxy.doSomethingShadowed(foo));
         await(5L, TimeUnit.SECONDS);
 
-        proxy = Fluently.replay(Bar.class)
-                        .filteringWith(filter)
-                        .retrievingFrom(invocationDestination)
-                        .forContextId(contextIds.get(0));
+        proxy = replay(Bar.class)
+                    .filteringWith(filter)
+                    .retrievingFrom(invocationDestination)
+                    .forContextId(contextIds.get(0));
         // TODO: Where does context ID come from in a replay? Candidate service receives ReplayRequest instead of usual input?
         assertEquals(result, proxy.doSomethingShadowed(foo));
         log.info(name + " finishing.");

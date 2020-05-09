@@ -1,6 +1,6 @@
-package io.shadowstack.incumbents;
+package io.shadowstack.invocations.destinations;
 
-import io.shadowstack.Invocation;
+import io.shadowstack.invocations.Invocation;
 
 import java.util.List;
 

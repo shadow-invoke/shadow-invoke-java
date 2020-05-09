@@ -2,16 +2,19 @@ package io.shadowstack.candidates;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import io.javalin.Javalin;
 import io.javalin.core.JavalinServer;
 import io.javalin.http.BadRequestResponse;
 import io.javalin.http.InternalServerErrorResponse;
+import io.shadowstack.candidates.registrars.CandidateRegistrar;
+import io.shadowstack.candidates.registrars.RegistrationRequest;
+import io.shadowstack.candidates.registrars.RegistrationResponse;
 import io.shadowstack.filters.ObjectFilter;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
-
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.*;
@@ -29,9 +32,8 @@ import static io.javalin.apibuilder.ApiBuilder.post;
 public class CandidateService implements Runnable, AutoCloseable {
     private static final ObjectMapper MAPPER = new ObjectMapper();
     static {
-        // TODO: Too tightly coupled to Jackson for my liking
         MAPPER.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
-        MAPPER.findAndRegisterModules();
+        MAPPER.registerModule(new JavaTimeModule()); // replace deprecated time module
     }
     @NonNull private final CandidateRegistrar registrar;
     @NonNull private final Set<Method> shadowedMethods;

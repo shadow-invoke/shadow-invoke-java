@@ -1,7 +1,7 @@
 package io.shadowstack.incumbents;
 
-import io.shadowstack.Invocation;
-import io.shadowstack.InvocationContext;
+import io.shadowstack.invocations.Invocation;
+import io.shadowstack.invocations.InvocationContext;
 import io.shadowstack.throttles.Throttle;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
