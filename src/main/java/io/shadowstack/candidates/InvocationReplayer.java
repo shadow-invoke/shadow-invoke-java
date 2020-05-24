@@ -13,6 +13,8 @@ import io.shadowstack.exceptions.InvocationReplayerException;
 import io.shadowstack.filters.ObjectFilter;
 
 import java.lang.reflect.Method;
+import java.time.Duration;
+import java.time.Instant;
 
 @Slf4j
 public class InvocationReplayer<T> implements MethodInterceptor {
@@ -60,11 +62,28 @@ public class InvocationReplayer<T> implements MethodInterceptor {
     public Object intercept(Object obj, Method method, Object[] args, MethodProxy proxy) throws Throwable {
         // Top-level caller is responsible for setting a context for replays.
         // To this end, it will receive a GUID in the shadowing request.
-        try(InvocationContext context = new InvocationContext(this.contextId)) {
+        try(InvocationContext context = new InvocationContext(this.contextId))
+        {
+            Instant replayStart = Instant.now();
             InvocationKey key = new InvocationKey(method, this.objectFilter.filterAsEvaluatedCopy(args));
             InvocationParameters parameters = new InvocationParameters(key, context);
             Invocation invocation = this.invocationSource.retrieve(parameters);
-            // Using reference result here since replay should be as close to original as possible
+            /**
+             * When replaying an invocation, mimic the original caller's experience as closely as possible.
+             *      1. Return the reference result instead of the evaluated result.
+             *      2. Throw any exception thrown by the original call.
+             *      3. If possible, take the same amount of time to return.
+             */
+            Duration replayDuration = Duration.between(replayStart, Instant.now());
+            if(invocation.getCallDuration() != null) {
+                Duration durationToWait = invocation.getCallDuration().minus(replayDuration);
+                if(!durationToWait.isNegative()) {
+                    Thread.sleep(durationToWait.toMillis());
+                }
+            }
+            if(invocation.getExceptionThrown() != null) {
+                throw invocation.getExceptionThrown();
+            }
             return (invocation != null) ? invocation.getReferenceResult() : null;
         }
     }

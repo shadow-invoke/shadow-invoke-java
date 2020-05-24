@@ -15,6 +15,8 @@ import reactor.core.scheduler.Scheduler;
 import reactor.core.scheduler.Schedulers;
 
 import java.lang.reflect.Method;
+import java.time.Duration;
+import java.time.Instant;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.Executors;
@@ -67,14 +69,27 @@ public class InvocationRecorder implements MethodInterceptor, Consumer<FluxSink<
 
     @Override
     public Object intercept(Object o, Method method, Object[] arguments, MethodProxy proxy) throws Throwable {
-        Object result = method.invoke(this.originalInstance, arguments); // TODO: How to replay exceptions?
+        Throwable exceptionThrown = null;
+        Duration callDuration = null;
+        Object result = null;
+        Instant start = Instant.now();
+
+        try {
+            result = method.invoke(this.originalInstance, arguments);
+        } catch(Throwable t) {
+            exceptionThrown = t;
+        } finally {
+            callDuration = Duration.between(start, Instant.now());
+        }
+
         try(InvocationContext context = new InvocationContext()) {
             Invocation invocation = new Invocation(
                     method, context,
                     this.objectFilter.filterAsReferenceCopy(arguments),
                     this.objectFilter.filterAsReferenceCopy(result),
                     this.objectFilter.filterAsEvaluatedCopy(arguments),
-                    this.objectFilter.filterAsEvaluatedCopy(result)
+                    this.objectFilter.filterAsEvaluatedCopy(result),
+                    exceptionThrown, callDuration
             );
             if(this.getThrottle() == null || !this.getThrottle().reject()) {
                 this.listeners.forEach(l -> l.next(invocation));
@@ -84,6 +99,11 @@ public class InvocationRecorder implements MethodInterceptor, Consumer<FluxSink<
             String className = this.originalInstance.getClass().getSimpleName();
             log.error(String.format(message, method.getName(), arguments.length, className), t);
         }
+
+        if(exceptionThrown != null) {
+            throw exceptionThrown;
+        }
+
         return result;
     }
 
