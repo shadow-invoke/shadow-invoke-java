@@ -1,6 +1,15 @@
 package io.shadowstack;
 
+import io.shadowstack.candidates.CandidateService;
 import io.shadowstack.candidates.InvocationReplayer;
+import io.shadowstack.candidates.registrars.CandidateRegistrar;
+import io.shadowstack.candidates.registrars.RestCandidateRegistrar;
+import io.shadowstack.invocations.destinations.InvocationDestination;
+import io.shadowstack.invocations.destinations.ReplayingRestInvocationDestination;
+import io.shadowstack.invocations.destinations.ShadowingRestInvocationDestination;
+import io.shadowstack.invocations.sources.InvocationSource;
+import io.shadowstack.invocations.sources.RestInvocationSource;
+import lombok.AllArgsConstructor;
 import lombok.experimental.UtilityClass;
 import io.shadowstack.filters.FieldFilter;
 import io.shadowstack.filters.Noise;
@@ -85,5 +94,34 @@ public class Fluently {
 
     public static <T> InvocationReplayer<T> replay(Class<T> cls) {
         return new InvocationReplayer<>(cls);
+    }
+
+    public static CandidateService.CandidateServiceBuilder candidate(Object candidateInstance) {
+        return CandidateService.builder().candidateInstance(candidateInstance);
+    }
+
+    @AllArgsConstructor
+    private static class DestinationClientBuilder {
+        private String host;
+
+        public InvocationDestination replaying() {
+            return ReplayingRestInvocationDestination.createClient(this.host);
+        }
+
+        public InvocationDestination shadowing() {
+            return ShadowingRestInvocationDestination.createClient(this.host);
+        }
+    }
+
+    public static DestinationClientBuilder destination(String host) {
+        return new DestinationClientBuilder(host);
+    }
+
+    public static InvocationSource source(String host) {
+        return RestInvocationSource.createClient(host);
+    }
+
+    public static CandidateRegistrar registrar(String host) {
+        return RestCandidateRegistrar.createClient(host);
     }
 }

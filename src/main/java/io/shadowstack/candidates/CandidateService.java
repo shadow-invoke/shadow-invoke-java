@@ -27,7 +27,7 @@ import static io.javalin.apibuilder.ApiBuilder.post;
  * Exposes the candidate class as a service for invocation shadowing.
  */
 @Slf4j
-@Builder
+@Builder(buildMethodName = "buildService")
 @AllArgsConstructor
 public class CandidateService implements Runnable, AutoCloseable {
     private static final ObjectMapper MAPPER = new ObjectMapper();
@@ -35,11 +35,11 @@ public class CandidateService implements Runnable, AutoCloseable {
         MAPPER.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
         MAPPER.registerModule(new JavaTimeModule()); // replace deprecated time module
     }
-    @NonNull private final CandidateRegistrar registrar;
-    @NonNull private final Set<Method> shadowedMethods;
+    @NonNull private final CandidateRegistrar registeringWith;
+    @NonNull private final Set<Method> shadowingMethods;
     @NonNull private final Object candidateInstance;
-    private final ObjectFilter objectFilter;
-    private final int servicePort;
+    private final ObjectFilter filteringWith;
+    private final int onPort;
     private Map<String, Method> methodsServed;
     private Map<String, RegistrationResponse> methodsRegistered;
     private Javalin app;
@@ -48,7 +48,7 @@ public class CandidateService implements Runnable, AutoCloseable {
     public void run() {
         // Generate keys for registering with the oracle service
         String cls = this.candidateInstance.getClass().getCanonicalName();
-        this.methodsServed = this.shadowedMethods
+        this.methodsServed = this.shadowingMethods
                                     .stream()
                                     .collect(
                                         Collectors.toMap(
@@ -56,7 +56,7 @@ public class CandidateService implements Runnable, AutoCloseable {
                                             Function.identity()
                                         )
                                     );
-        this.app = Javalin.create().start(servicePort);
+        this.app = Javalin.create().start(onPort);
         register(this.app.server()); // might not get called until app shuts down?
         this.app.routes(() -> {
             post("/shadow", ctx -> {
@@ -97,8 +97,8 @@ public class CandidateService implements Runnable, AutoCloseable {
         Object result = null;
         try {
             result = toInvoke.invoke(this.candidateInstance, givenArguments);
-            if(objectFilter != null) {
-                result = this.objectFilter.filterAsEvaluatedCopy(result);
+            if(filteringWith != null) {
+                result = this.filteringWith.filterAsEvaluatedCopy(result);
             } else {
                 log.warn(String.format("Object filter is null while serving %s", request));
             }
@@ -120,7 +120,7 @@ public class CandidateService implements Runnable, AutoCloseable {
             String targetClass = this.candidateInstance.getClass().getCanonicalName();
             RegistrationRequest request = new RegistrationRequest(targetClass, e.getValue().getName(), argumentClasses,
                                                                   server.getServerHost(), server.getServerPort());
-            RegistrationResponse response = this.registrar.register(request);
+            RegistrationResponse response = this.registeringWith.register(request);
             this.methodsRegistered.put(e.getKey(), response);
         });
     }

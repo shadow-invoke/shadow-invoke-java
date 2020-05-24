@@ -35,8 +35,12 @@ public class InvocationReplayer<T> implements MethodInterceptor {
         return this;
     }
 
-    public T forContextId(String contextId) throws InvocationReplayerException {
+    public InvocationReplayer<T> forContextId(String contextId) {
         this.contextId = contextId;
+        return this;
+    }
+
+    public T buildProxy() throws InvocationReplayerException {
         if(this.cls == null) {
             throw new InvocationReplayerException("InvocationReplayer created with null class.");
         }

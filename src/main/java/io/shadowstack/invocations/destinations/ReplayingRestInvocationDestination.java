@@ -28,7 +28,7 @@ public interface ReplayingRestInvocationDestination extends InvocationDestinatio
      * @param host The host name of the oracle, including the protocol and port, e.g. "http://localhost:8080".
      * @return An instance of InvocationDestination that forwards to the oracle's "replaying" endpoint.
      */
-    public static InvocationDestination create(String host) {
+    public static InvocationDestination createClient(String host) {
         return Feign.builder()
                     .client(new OkHttpClient())
                     .encoder(new JacksonEncoder())

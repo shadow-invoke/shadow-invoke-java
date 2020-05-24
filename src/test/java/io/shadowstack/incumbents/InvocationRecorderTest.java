@@ -43,7 +43,7 @@ public class InvocationRecorderTest extends BaseTest {
                                 return invocations;
                             }
                         }).withBatchSize(1))
-                        .proxyingAs(Bar.class);
+                        .buildProxy(Bar.class);
         assertEquals(result, proxy.doSomethingShadowed(foo));
         Invocation invocation = future.get(5L, TimeUnit.SECONDS);
 
@@ -97,7 +97,7 @@ public class InvocationRecorderTest extends BaseTest {
                         return invocations;
                     }
                 }).withBatchSize(1))
-                .proxyingAs(Bar.class);
+                .buildProxy(Bar.class);
         assertEquals(result, proxy.doSomethingShadowed(foo));
         Invocation invocation = future.get(5L, TimeUnit.SECONDS);
 
@@ -153,7 +153,7 @@ public class InvocationRecorderTest extends BaseTest {
                         return invocations;
                     }
                 }).withBatchSize(20))
-                .proxyingAs(Bar.class);
+                .buildProxy(Bar.class);
         for(int i=0; i<100; ++i) {
             assertEquals(result, proxy.doSomethingShadowed(foo));
         }
@@ -184,7 +184,7 @@ public class InvocationRecorderTest extends BaseTest {
                         return invocations;
                     }
                 }).withBatchSize(1))
-                .proxyingAs(Bar.class);
+                .buildProxy(Bar.class);
         for(int i=0; i<100; ++i) {
             assertEquals(result, proxy.doSomethingShadowed(foo));
         }
@@ -215,7 +215,7 @@ public class InvocationRecorderTest extends BaseTest {
                         return invocations;
                     }
                 }).withBatchSize(4))
-                .proxyingAs(Bar.class);
+                .buildProxy(Bar.class);
         for(int i=0; i<8; ++i) {
             assertEquals(result, proxy.doSomethingShadowed(foo));
             try {
@@ -250,7 +250,7 @@ public class InvocationRecorderTest extends BaseTest {
                         return invocations;
                     }
                 }).withBatchSize(4))
-                .proxyingAs(null);
+                .buildProxy(null);
         assertNull(proxy);
     }
 }

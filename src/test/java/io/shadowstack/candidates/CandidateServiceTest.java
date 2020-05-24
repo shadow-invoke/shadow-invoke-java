@@ -43,23 +43,24 @@ public class CandidateServiceTest extends BaseTest {
                 return null;
             }
         };
+
         Method testMethod = Bar.class.getMethod("doSomethingShadowed", Foo.class);
         Set<Method> methods = new HashSet<>();
         methods.add(testMethod);
+
         ObjectFilter filter = filter(
                 noise().from(Foo.class),
                 secrets().from(Foo.class),
                 noise().from(Baz.class),
                 secrets().from(Baz.class)
         ).toObjectDepth(1);
-        try(CandidateService service = CandidateService
-                                            .builder()
-                                            .candidateInstance(this.bar)
-                                            .registrar(testRegistrar)
-                                            .servicePort(port)
-                                            .shadowedMethods(methods)
-                                            .objectFilter(filter)
-                                            .build()
+
+        try(CandidateService service = candidate(this.bar)
+                                            .registeringWith(testRegistrar)
+                                            .onPort(port)
+                                            .shadowingMethods(methods)
+                                            .filteringWith(filter)
+                                            .buildService()
         ) {
             service.run();
             TestService client = Feign

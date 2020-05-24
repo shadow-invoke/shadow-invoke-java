@@ -21,7 +21,7 @@ public interface RestInvocationSource extends InvocationSource {
      * @param host The host name of the oracle, including the protocol and port, e.g. "http://localhost:8080".
      * @return An instance of InvocationSource that retrieves from the oracle's "recording" endpoint.
      */
-    public static InvocationSource create(String host) {
+    public static InvocationSource createClient(String host) {
         return Feign.builder()
                 .client(new OkHttpClient())
                 .encoder(new JacksonEncoder())

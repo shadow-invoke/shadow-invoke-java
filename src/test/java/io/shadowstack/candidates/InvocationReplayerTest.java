@@ -33,24 +33,23 @@ public class InvocationReplayerTest extends BaseTest {
             return true;
         });
 
-        ObjectFilter filter = Fluently.filter(
-                                        noise().from(Foo.class),
-                                        secrets().from(Foo.class),
-                                        noise().from(Baz.class),
-                                        secrets().from(Baz.class)
-        );
+        ObjectFilter filter = Fluently.filter(noise().from(Foo.class),
+                                              secrets().from(Foo.class),
+                                              noise().from(Baz.class),
+                                              secrets().from(Baz.class));
 
         Bar proxy = record(bar)
-                            .filteringWith(filter)
-                            .sendingTo(new InvocationSink(invocationDestination).withBatchSize(1))
-                            .proxyingAs(Bar.class);
+                        .filteringWith(filter)
+                        .sendingTo(new InvocationSink(invocationDestination).withBatchSize(1))
+                        .buildProxy(Bar.class);
         assertEquals(result, proxy.doSomethingShadowed(foo));
         await(5L, TimeUnit.SECONDS);
 
         proxy = replay(Bar.class)
                     .filteringWith(filter)
                     .retrievingFrom(invocationDestination)
-                    .forContextId(contextIds.get(0));
+                    .forContextId(contextIds.get(0))
+                    .buildProxy();
         assertEquals(result, proxy.doSomethingShadowed(foo));
         log.info(name + " finishing.");
     }

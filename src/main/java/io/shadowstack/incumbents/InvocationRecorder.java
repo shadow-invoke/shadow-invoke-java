@@ -55,7 +55,7 @@ public class InvocationRecorder implements MethodInterceptor, Consumer<FluxSink<
         return this;
     }
 
-    public <T> T proxyingAs(Class<T> cls) {
+    public <T> T buildProxy(Class<T> cls) {
         if(cls == null || !cls.isInstance(this.originalInstance)) {
             String message = "Invalid combination of class %s and original instance %s. Returning null.";
             String className = (cls != null)? cls.getSimpleName() : "null";
