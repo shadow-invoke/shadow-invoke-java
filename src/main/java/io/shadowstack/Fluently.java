@@ -102,7 +102,7 @@ public class Fluently {
 
     @AllArgsConstructor
     private static class DestinationClientBuilder {
-        private String host;
+        private final String host;
 
         public InvocationDestination replaying() {
             return ReplayingRestInvocationDestination.createClient(this.host);

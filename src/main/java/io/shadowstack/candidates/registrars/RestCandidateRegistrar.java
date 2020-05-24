@@ -23,7 +23,7 @@ public interface RestCandidateRegistrar extends CandidateRegistrar {
      * @param host The host name of the oracle, including the protocol and port, e.g. "http://localhost:8080".
      * @return An instance of CandidateRegistrar that forwards to the oracle's "register" endpoint.
      */
-    public static CandidateRegistrar createClient(String host) {
+    static CandidateRegistrar createClient(String host) {
         return Feign.builder()
                 .client(new OkHttpClient())
                 .encoder(new JacksonEncoder())

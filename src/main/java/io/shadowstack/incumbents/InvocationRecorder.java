@@ -57,6 +57,7 @@ public class InvocationRecorder implements MethodInterceptor, Consumer<FluxSink<
         return this;
     }
 
+    @SuppressWarnings("unchecked")
     public <T> T buildProxy(Class<T> cls) {
         if(cls == null || !cls.isInstance(this.originalInstance)) {
             String message = "Invalid combination of class %s and original instance %s. Returning null.";
@@ -70,7 +71,7 @@ public class InvocationRecorder implements MethodInterceptor, Consumer<FluxSink<
     @Override
     public Object intercept(Object o, Method method, Object[] arguments, MethodProxy proxy) throws Throwable {
         Throwable exceptionThrown = null;
-        Duration callDuration = null;
+        Duration callDuration;
         Object result = null;
         Instant start = Instant.now();
 

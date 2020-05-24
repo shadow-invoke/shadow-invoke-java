@@ -11,8 +11,6 @@ import feign.okhttp.OkHttpClient;
 import feign.slf4j.Slf4jLogger;
 import io.shadowstack.*;
 import io.shadowstack.candidates.registrars.CandidateRegistrar;
-import io.shadowstack.candidates.registrars.RegistrationRequest;
-import io.shadowstack.candidates.registrars.RegistrationResponse;
 import io.shadowstack.filters.ObjectFilter;
 import io.shadowstack.invocations.InvocationContext;
 import io.shadowstack.invocations.InvocationKey;
@@ -28,7 +26,7 @@ import static io.shadowstack.Fluently.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 public class CandidateServiceTest extends BaseTest {
-    public static interface TestService {
+    public interface TestService {
         @RequestLine("POST /shadow")
         @Headers("Content-Type: application/json")
         ShadowResponse shadow(ShadowRequest request);
@@ -37,12 +35,7 @@ public class CandidateServiceTest extends BaseTest {
     @Test
     public void testShadowSimple() throws Exception {
         final int port = this.findFreePort();
-        CandidateRegistrar testRegistrar = new CandidateRegistrar() {
-            @Override
-            public RegistrationResponse register(RegistrationRequest request) {
-                return null;
-            }
-        };
+        CandidateRegistrar testRegistrar = request -> null;
 
         Method testMethod = Bar.class.getMethod("doSomethingShadowed", Foo.class);
         Set<Method> methods = new HashSet<>();
@@ -55,7 +48,7 @@ public class CandidateServiceTest extends BaseTest {
                 secrets().from(Baz.class)
         ).toObjectDepth(1);
 
-        try(CandidateService service = candidate(this.bar)
+        try(CandidateService service = candidate(bar)
                                             .registeringWith(testRegistrar)
                                             .onPort(port)
                                             .shadowingMethods(methods)
@@ -73,12 +66,12 @@ public class CandidateServiceTest extends BaseTest {
                     .logLevel(Logger.Level.FULL)
                     .target(TestService.class, "http://localhost:" + port);
             ShadowRequest request = new ShadowRequest();
-            Object[] args = new Object[]{this.foo};
+            Object[] args = new Object[]{foo};
             request.setArguments(args);
             request.setInvocationContext(new InvocationContext(UUID.randomUUID().toString()));
             request.setInvocationKey(new InvocationKey(testMethod, args));
             ShadowResponse response = client.shadow(request);
-            assertTrue(response.getResult().toString().equals(this.result));
+            assertEquals(response.getResult().toString(), result);
         }
     }
 }

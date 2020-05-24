@@ -58,12 +58,10 @@ public class CandidateService implements Runnable, AutoCloseable {
                                     );
         this.app = Javalin.create().start(onPort);
         register(this.app.server()); // might not get called until app shuts down?
-        this.app.routes(() -> {
-            post("/shadow", ctx -> {
-                ShadowResponse response = this.shadow(ctx.bodyAsClass(ShadowRequest.class));
-                ctx.json(Objects.requireNonNull(response));
-            });
-        });
+        this.app.routes(() -> post("/shadow", ctx -> {
+            ShadowResponse response = this.shadow(ctx.bodyAsClass(ShadowRequest.class));
+            ctx.json(Objects.requireNonNull(response));
+        }));
     }
 
     private ShadowResponse shadow(ShadowRequest request) {
@@ -94,7 +92,7 @@ public class CandidateService implements Runnable, AutoCloseable {
             }
         }
         // Then filter the result and create a new response object to return.
-        Object result = null;
+        Object result;
         try {
             result = toInvoke.invoke(this.candidateInstance, givenArguments);
             if(filteringWith != null) {
@@ -113,15 +111,15 @@ public class CandidateService implements Runnable, AutoCloseable {
 
     private void register(JavalinServer server) {
         this.methodsRegistered = new HashMap<>();
-        this.methodsServed.entrySet().forEach(e -> {
-            List<String> argumentClasses = Arrays.stream(e.getValue().getParameterTypes())
-                                                    .map(Class::getCanonicalName)
-                                                    .collect(Collectors.toList());
+        this.methodsServed.forEach((key, value) -> {
+            List<String> argumentClasses = Arrays.stream(value.getParameterTypes())
+                    .map(Class::getCanonicalName)
+                    .collect(Collectors.toList());
             String targetClass = this.candidateInstance.getClass().getCanonicalName();
-            RegistrationRequest request = new RegistrationRequest(targetClass, e.getValue().getName(), argumentClasses,
-                                                                  server.getServerHost(), server.getServerPort());
+            RegistrationRequest request = new RegistrationRequest(targetClass, value.getName(), argumentClasses,
+                    server.getServerHost(), server.getServerPort());
             RegistrationResponse response = this.registeringWith.register(request);
-            this.methodsRegistered.put(e.getKey(), response);
+            this.methodsRegistered.put(key, response);
         });
     }
 

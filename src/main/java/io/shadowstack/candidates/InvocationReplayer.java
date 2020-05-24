@@ -42,6 +42,7 @@ public class InvocationReplayer<T> implements MethodInterceptor {
         return this;
     }
 
+    @SuppressWarnings("unchecked")
     public T buildProxy() throws InvocationReplayerException {
         if(this.cls == null) {
             throw new InvocationReplayerException("InvocationReplayer created with null class.");
@@ -68,20 +69,20 @@ public class InvocationReplayer<T> implements MethodInterceptor {
             InvocationKey key = new InvocationKey(method, this.objectFilter.filterAsEvaluatedCopy(args));
             InvocationParameters parameters = new InvocationParameters(key, context);
             Invocation invocation = this.invocationSource.retrieve(parameters);
-            /**
-             * When replaying an invocation, mimic the original caller's experience as closely as possible.
-             *      1. Return the reference result instead of the evaluated result.
-             *      2. Throw any exception thrown by the original call.
-             *      3. If possible, take the same amount of time to return.
+            /*
+              When replaying an invocation, mimic the original caller's experience as closely as possible.
+                   1. Return the reference result instead of the evaluated result.
+                   2. Throw any exception thrown by the original call.
+                   3. If possible, take the same amount of time to return.
              */
             Duration replayDuration = Duration.between(replayStart, Instant.now());
-            if(invocation.getCallDuration() != null) {
+            if(invocation != null && invocation.getCallDuration() != null) {
                 Duration durationToWait = invocation.getCallDuration().minus(replayDuration);
                 if(!durationToWait.isNegative()) {
                     Thread.sleep(durationToWait.toMillis());
                 }
             }
-            if(invocation.getExceptionThrown() != null) {
+            if(invocation != null && invocation.getExceptionThrown() != null) {
                 throw invocation.getExceptionThrown();
             }
             return (invocation != null) ? invocation.getReferenceResult() : null;

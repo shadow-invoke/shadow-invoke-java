@@ -1,8 +1,6 @@
 package io.shadowstack;
 
 import io.shadowstack.invocations.Invocation;
-import io.shadowstack.invocations.InvocationContext;
-import io.shadowstack.invocations.InvocationKey;
 import io.shadowstack.invocations.sources.InvocationParameters;
 import io.shadowstack.invocations.sources.InvocationSource;
 import io.shadowstack.invocations.destinations.InvocationDestination;
