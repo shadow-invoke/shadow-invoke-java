@@ -1,14 +1,14 @@
 package io.shadowstack.filters;
 
 import io.shadowstack.DefaultValue;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import io.shadowstack.BaseTest;
 import io.shadowstack.Baz;
 import io.shadowstack.Foo;
 
 import static io.shadowstack.Fluently.*;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class ObjectFilterTest extends BaseTest {
     @Test

@@ -4,7 +4,7 @@ import io.shadowstack.*;
 import io.shadowstack.invocations.Invocation;
 import io.shadowstack.invocations.destinations.InvocationDestination;
 import lombok.extern.slf4j.Slf4j;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import io.shadowstack.filters.Noise;
 import io.shadowstack.filters.ObjectFilter;
 import io.shadowstack.filters.Secret;
@@ -16,7 +16,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 import static io.shadowstack.Fluently.*;
 
 @Slf4j
@@ -161,7 +161,7 @@ public class InvocationRecorderTest extends BaseTest {
         log.info(name + " finishing.");
     }
 
-    @Test(expected = TimeoutException.class)
+    @Test
     public void testOneHundredPercentThrottling() throws TimeoutException, InterruptedException {
         String name = new Object(){}.getClass().getEnclosingMethod().getName();
         log.info(name + " starting.");
@@ -188,7 +188,7 @@ public class InvocationRecorderTest extends BaseTest {
         for(int i=0; i<100; ++i) {
             assertEquals(result, proxy.doSomethingShadowed(foo));
         }
-        await(5, TimeUnit.SECONDS);
+        assertThrows(TimeoutException.class, () -> await(5, TimeUnit.SECONDS));
     }
 
     @Test

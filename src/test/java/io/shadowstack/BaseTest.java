@@ -1,7 +1,7 @@
 package io.shadowstack;
 
 import net.jodah.concurrentunit.ConcurrentTestCase;
-import org.junit.Before;
+import org.junit.jupiter.api.BeforeAll;
 
 import java.io.IOException;
 import java.net.ServerSocket;
@@ -15,7 +15,7 @@ public class BaseTest extends ConcurrentTestCase {
     protected Foo foo = new Foo("Bob", "Smith", 35, LocalDateTime.now(), baz);
     protected String result = bar.doSomethingShadowed(foo);
 
-    @Before
+    @BeforeAll
     public void before() {
         bar = new Bar();
         baz = new Baz("Pawn", 75000.00D, 69.5F, 1234L, new HashMap<>());

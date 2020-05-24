@@ -3,7 +3,7 @@ package io.shadowstack.candidates;
 import io.shadowstack.*;
 import io.shadowstack.incumbents.InvocationSink;
 import lombok.extern.slf4j.Slf4j;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import io.shadowstack.exceptions.InvocationReplayerException;
 import io.shadowstack.filters.ObjectFilter;
 
@@ -13,7 +13,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
 import static io.shadowstack.Fluently.*;
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.*;
 
 @Slf4j
 public class InvocationReplayerTest extends BaseTest {
