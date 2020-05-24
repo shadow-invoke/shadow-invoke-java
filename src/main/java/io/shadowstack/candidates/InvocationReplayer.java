@@ -3,6 +3,7 @@ package io.shadowstack.candidates;
 import io.shadowstack.invocations.Invocation;
 import io.shadowstack.invocations.InvocationContext;
 import io.shadowstack.invocations.InvocationKey;
+import io.shadowstack.invocations.sources.InvocationParameters;
 import io.shadowstack.invocations.sources.InvocationSource;
 import lombok.extern.slf4j.Slf4j;
 import net.sf.cglib.proxy.Enhancer;
@@ -57,7 +58,8 @@ public class InvocationReplayer<T> implements MethodInterceptor {
         // To this end, it will receive a GUID in the shadowing request.
         try(InvocationContext context = new InvocationContext(this.contextId)) {
             InvocationKey key = new InvocationKey(method, this.objectFilter.filterAsEvaluatedCopy(args));
-            Invocation invocation = this.invocationSource.retrieve(key, context);
+            InvocationParameters parameters = new InvocationParameters(key, context);
+            Invocation invocation = this.invocationSource.retrieve(parameters);
             // Using reference result here since replay should be as close to original as possible
             return (invocation != null) ? invocation.getReferenceResult() : null;
         }

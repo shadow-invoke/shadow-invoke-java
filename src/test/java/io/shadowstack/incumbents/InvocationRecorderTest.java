@@ -17,6 +17,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
 import static org.junit.Assert.*;
+import static io.shadowstack.Fluently.*;
 
 @Slf4j
 public class InvocationRecorderTest extends BaseTest {
@@ -25,13 +26,13 @@ public class InvocationRecorderTest extends BaseTest {
         String name = new Object(){}.getClass().getEnclosingMethod().getName();
         log.info(name + " starting.");
         CompletableFuture<Invocation> future = new CompletableFuture<>();
-        ObjectFilter filter = Fluently.filter(
-                Fluently.noise().from(Foo.class).where(Fluently.named("timestamp")),
-                Fluently.secrets().from(Foo.class).where(Fluently.named("lastName")),
-                Fluently.noise().from(Baz.class).where(Fluently.named("id")),
-                Fluently.secrets().from(Baz.class).where(Fluently.named("salary"))
+        ObjectFilter filter = filter(
+                noise().from(Foo.class).where(named("timestamp")),
+                secrets().from(Foo.class).where(named("lastName")),
+                noise().from(Baz.class).where(named("id")),
+                secrets().from(Baz.class).where(named("salary"))
         );
-        Bar proxy = Fluently.record(bar)
+        Bar proxy = record(bar)
                         .filteringWith(filter)
                         .sendingTo(new InvocationSink(new InvocationDestination() {
                             @Override
@@ -79,13 +80,13 @@ public class InvocationRecorderTest extends BaseTest {
         String name = new Object(){}.getClass().getEnclosingMethod().getName();
         log.info(name + " starting.");
         CompletableFuture<Invocation> future = new CompletableFuture<>();
-        ObjectFilter filter = Fluently.filter(
-                Fluently.noise().from(Foo.class).where(Fluently.annotated(Noise.class)),
-                Fluently.secrets().from(Foo.class).where(Fluently.annotated(Secret.class)),
-                Fluently.noise().from(Baz.class), // annotated is default predicate
-                Fluently.secrets().from(Baz.class) // annotated is default predicate
+        ObjectFilter filter = filter(
+                noise().from(Foo.class).where(annotated(Noise.class)),
+                secrets().from(Foo.class).where(annotated(Secret.class)),
+                noise().from(Baz.class), // annotated is default predicate
+                secrets().from(Baz.class) // annotated is default predicate
         );
-        Bar proxy = Fluently.record(bar)
+        Bar proxy = record(bar)
                 .filteringWith(filter)
                 .sendingTo(new InvocationSink(new InvocationDestination() {
                     @Override
@@ -132,16 +133,16 @@ public class InvocationRecorderTest extends BaseTest {
     public void testZeroPercentThrottling() throws TimeoutException, InterruptedException {
         String name = new Object(){}.getClass().getEnclosingMethod().getName();
         log.info(name + " starting.");
-        ObjectFilter filter = Fluently.filter(
-                Fluently.noise().from(Foo.class),
-                Fluently.secrets().from(Foo.class),
-                Fluently.noise().from(Baz.class),
-                Fluently.secrets().from(Baz.class)
+        ObjectFilter filter = filter(
+                noise().from(Foo.class),
+                secrets().from(Foo.class),
+                noise().from(Baz.class),
+                secrets().from(Baz.class)
         );
-        Bar proxy = Fluently.record(bar)
+        Bar proxy = record(bar)
                 .filteringWith(filter)
                 .throttlingTo(
-                        Fluently.percent(1.0)
+                        percent(1.0)
                 )
                 .sendingTo(new InvocationSink(new InvocationDestination() {
                     @Override
@@ -164,16 +165,16 @@ public class InvocationRecorderTest extends BaseTest {
     public void testOneHundredPercentThrottling() throws TimeoutException, InterruptedException {
         String name = new Object(){}.getClass().getEnclosingMethod().getName();
         log.info(name + " starting.");
-        ObjectFilter filter = Fluently.filter(
-                Fluently.noise().from(Foo.class),
-                Fluently.secrets().from(Foo.class),
-                Fluently.noise().from(Baz.class),
-                Fluently.secrets().from(Baz.class)
+        ObjectFilter filter = filter(
+                noise().from(Foo.class),
+                secrets().from(Foo.class),
+                noise().from(Baz.class),
+                secrets().from(Baz.class)
         );
-        Bar proxy = Fluently.record(bar)
+        Bar proxy = record(bar)
                 .filteringWith(filter)
                 .throttlingTo(
-                        Fluently.percent(0.0)
+                        percent(0.0)
                 )
                 .sendingTo(new InvocationSink(new InvocationDestination() {
                     @Override
@@ -194,16 +195,16 @@ public class InvocationRecorderTest extends BaseTest {
     public void testRateThrottling() throws InterruptedException, TimeoutException {
         String name = new Object(){}.getClass().getEnclosingMethod().getName();
         log.info(name + " starting.");
-        ObjectFilter filter = Fluently.filter(
-                Fluently.noise().from(Foo.class),
-                Fluently.secrets().from(Foo.class),
-                Fluently.noise().from(Baz.class),
-                Fluently.secrets().from(Baz.class)
+        ObjectFilter filter = filter(
+                noise().from(Foo.class),
+                secrets().from(Foo.class),
+                noise().from(Baz.class),
+                secrets().from(Baz.class)
         );
-        Bar proxy = Fluently.record(bar)
+        Bar proxy = record(bar)
                 .filteringWith(filter)
                 .throttlingTo(
-                        Fluently.rate(2).per(1L, TimeUnit.SECONDS)
+                        rate(2).per(1L, TimeUnit.SECONDS)
                 )
                 .sendingTo(new InvocationSink(new InvocationDestination() {
                     @Override
@@ -229,16 +230,16 @@ public class InvocationRecorderTest extends BaseTest {
     public void testNullClassYieldsNullProxy() {
         String name = new Object(){}.getClass().getEnclosingMethod().getName();
         log.info(name + " starting.");
-        ObjectFilter filter = Fluently.filter(
-                Fluently.noise().from(Foo.class),
-                Fluently.secrets().from(Foo.class),
-                Fluently.noise().from(Baz.class),
-                Fluently.secrets().from(Baz.class)
+        ObjectFilter filter = filter(
+                noise().from(Foo.class),
+                secrets().from(Foo.class),
+                noise().from(Baz.class),
+                secrets().from(Baz.class)
         );
-        Bar proxy = Fluently.record(bar)
+        Bar proxy = record(bar)
                 .filteringWith(filter)
                 .throttlingTo(
-                        Fluently.rate(2).per(1L, TimeUnit.SECONDS)
+                        rate(2).per(1L, TimeUnit.SECONDS)
                 )
                 .sendingTo(new InvocationSink(new InvocationDestination() {
                     @Override

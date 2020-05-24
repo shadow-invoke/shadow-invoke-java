@@ -10,7 +10,7 @@ import org.reactivestreams.Subscription;
 import java.util.List;
 
 /**
- * A sink for Invocations as they are either shadowed or recorded. Can either be a remote or local sink.
+ * A reactive sink for Invocations to be sent to an InvocationDestination.
  */
 @Slf4j
 public class InvocationSink implements Subscriber<List<Invocation>> {

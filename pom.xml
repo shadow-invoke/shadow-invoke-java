@@ -39,7 +39,7 @@
     <org.lombok.version>1.18.12</org.lombok.version>
     <ma.orika.version>1.5.4</ma.orika.version>
     <jackson.version>2.10.2</jackson.version>
-    <feign.version>9.3.1</feign.version>
+    <feign.version>11.0</feign.version>
   </properties>
 
   <distributionManagement>

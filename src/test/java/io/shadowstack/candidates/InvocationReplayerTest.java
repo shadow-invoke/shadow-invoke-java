@@ -51,7 +51,6 @@ public class InvocationReplayerTest extends BaseTest {
                     .filteringWith(filter)
                     .retrievingFrom(invocationDestination)
                     .forContextId(contextIds.get(0));
-        // TODO: Where does context ID come from in a replay? Candidate service receives ReplayRequest instead of usual input?
         assertEquals(result, proxy.doSomethingShadowed(foo));
         log.info(name + " finishing.");
     }

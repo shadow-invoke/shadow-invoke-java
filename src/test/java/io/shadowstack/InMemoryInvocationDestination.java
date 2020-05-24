@@ -3,8 +3,8 @@ package io.shadowstack;
 import io.shadowstack.invocations.Invocation;
 import io.shadowstack.invocations.InvocationContext;
 import io.shadowstack.invocations.InvocationKey;
+import io.shadowstack.invocations.sources.InvocationParameters;
 import io.shadowstack.invocations.sources.InvocationSource;
-import io.shadowstack.exceptions.InvocationSourceException;
 import io.shadowstack.invocations.destinations.InvocationDestination;
 import lombok.extern.slf4j.Slf4j;
 
@@ -42,16 +42,12 @@ public class InMemoryInvocationDestination implements InvocationSource, Invocati
     }
 
     @Override
-    public Invocation retrieve(InvocationKey key, InvocationContext context) throws InvocationSourceException {
-        if(key == null || context == null) {
-            String msg = String.format("Bad context (%s) or key (%s)", key, context);
-            throw new InvocationSourceException(msg);
-        }
-        String contextGuid = context.getContextId();
+    public Invocation retrieve(InvocationParameters parameters) {
+        String contextGuid = parameters.getContext();
         if(CONTEXT_TO_KEY_TO_RECORDINGS.containsKey(contextGuid) &&
-           CONTEXT_TO_KEY_TO_RECORDINGS.get(contextGuid).containsKey(key.getInvocationHash())) {
+           CONTEXT_TO_KEY_TO_RECORDINGS.get(contextGuid).containsKey(parameters.getHash())) {
             // Pops it off the queue and returns. Next call will get next instance.
-            return CONTEXT_TO_KEY_TO_RECORDINGS.get(contextGuid).get(key.getInvocationHash()).poll();
+            return CONTEXT_TO_KEY_TO_RECORDINGS.get(contextGuid).get(parameters.getHash()).poll();
         }
         return null;
     }
