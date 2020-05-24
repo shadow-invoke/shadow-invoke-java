@@ -14,6 +14,7 @@ import reactor.core.publisher.FluxSink;
 import reactor.core.scheduler.Scheduler;
 import reactor.core.scheduler.Schedulers;
 
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.time.Duration;
 import java.time.Instant;
@@ -77,6 +78,8 @@ public class InvocationRecorder implements MethodInterceptor, Consumer<FluxSink<
 
         try {
             result = method.invoke(this.originalInstance, arguments);
+        } catch(InvocationTargetException ite) {
+            exceptionThrown = ite.getTargetException();
         } catch(Throwable t) {
             exceptionThrown = t;
         } finally {

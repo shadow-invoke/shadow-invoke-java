@@ -7,6 +7,7 @@ import org.junit.jupiter.api.Test;
 import io.shadowstack.filters.Noise;
 import io.shadowstack.filters.ObjectFilter;
 import io.shadowstack.filters.Secret;
+import sun.reflect.generics.reflectiveObjects.NotImplementedException;
 
 import java.time.LocalDateTime;
 import java.util.concurrent.CompletableFuture;
@@ -119,6 +120,26 @@ public class InvocationRecorderTest extends BaseTest {
         assertEquals(evaluatedFoo.getBaz().getId(), DefaultValue.of(Long.class));
         assertEquals(invocation.getEvaluatedResult(), result);
         log.info(name + " finishing.");
+    }
+
+    @Test
+    public void testThrownExceptionIsPropagated() throws TimeoutException, InterruptedException {
+        String name = new Object() {
+        }.getClass().getEnclosingMethod().getName();
+        log.info(name + " starting.");
+        ObjectFilter filter = filter(
+                noise().from(Foo.class),
+                secrets().from(Foo.class),
+                noise().from(Baz.class),
+                secrets().from(Baz.class)
+        );
+        Bar proxy = record(bar)
+                        .filteringWith(filter)
+                        .sendingTo(new InvocationSink(invocations -> {
+                            return invocations;
+                        }).withBatchSize(1))
+                        .buildProxy(Bar.class);
+        assertThrows(NotImplementedException.class, () -> proxy.doSomethingBad(foo));
     }
 
     @Test
