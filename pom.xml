@@ -212,9 +212,6 @@
           <excludes>
             <exclude>META-INF/**</exclude>
           </excludes>
-          <systemPropertyVariables>
-            <jacoco-agent.destfile>target/jacoco.exec</jacoco-agent.destfile>
-          </systemPropertyVariables>
         </configuration>
       </plugin>
       <plugin>
