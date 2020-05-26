@@ -31,6 +31,7 @@ public class InMemoryInvocationDestination implements InvocationSource, Invocati
                 CONTEXT_TO_KEY_TO_RECORDINGS.putIfAbsent(contextGuid, new HashMap<>());
                 CONTEXT_TO_KEY_TO_RECORDINGS.get(contextGuid).putIfAbsent(keyHash, new LinkedList<>());
                 CONTEXT_TO_KEY_TO_RECORDINGS.get(contextGuid).get(keyHash).offer(invocation);
+                log.info(String.format("Queueing %s at context %s, key hash %s", invocation, contextGuid, keyHash));
             }
         }
         if(this.callback != null) {
@@ -42,10 +43,13 @@ public class InMemoryInvocationDestination implements InvocationSource, Invocati
     @Override
     public Invocation retrieve(InvocationParameters parameters) {
         String contextGuid = parameters.getContext();
+        String keyHash = parameters.getHash();
         if(CONTEXT_TO_KEY_TO_RECORDINGS.containsKey(contextGuid) &&
-           CONTEXT_TO_KEY_TO_RECORDINGS.get(contextGuid).containsKey(parameters.getHash())) {
+           CONTEXT_TO_KEY_TO_RECORDINGS.get(contextGuid).containsKey(keyHash)) {
             // Pops it off the queue and returns. Next call will get next instance.
-            return CONTEXT_TO_KEY_TO_RECORDINGS.get(contextGuid).get(parameters.getHash()).poll();
+            Invocation invocation = CONTEXT_TO_KEY_TO_RECORDINGS.get(contextGuid).get(parameters.getHash()).poll();
+            log.info(String.format("Dequeueing %s at context %s, key hash %s", invocation, contextGuid, keyHash));
+            return invocation;
         }
         return null;
     }
